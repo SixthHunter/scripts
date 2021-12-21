@@ -76,4 +76,4 @@ Kristapsk's [bitcoin scripts](https://github.com/kristapsk/bitcoin-scripts)
 >    bc1qlxm5dfjl58whg6tvtszg5pfna9mn2cr2nulnjr
 
 
-***(ARCHIVAL REPOSITORY)**
+***(ARCHIVAL REPOSITORY)***
