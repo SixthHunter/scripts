@@ -38,7 +38,7 @@ __wf.sh__ |  Weather forecast (norway meteorological institute)
 __yahooscrape.sh__ | scrape some yahoo! finance tickers
 
 
-## BITCOIN-RELATED SCRIPTS
+## BITCOIN BLOCKCHAIN-RELATED SCRIPTS
 
 Bitcoin scripts warp about `bitcoin-cli` (bitcoind) and try to parse data.
 `bitcoin.tx.sh` is transaction-centred while `bitcoin.blk.sh` is block-centred.
@@ -70,9 +70,11 @@ __blockchair.btcoutputs.sh__ |  Download blockchair output dump files systematic
 __zzz.bitcoin.parsedTxs.txt__ | Example of parsed transactions from block 714176
 
 
-## FURTHER HELP AND USAGE EXAMPLES
+## FURTHER HELP AND USAGE EXAMPLES / MAIS AJUDA E EXEMPLOS DE USO
 
 Check script help pages with option -h.
+
+Veja as páginas de ajuda dos scripts com a opção -h. 
 
 
 ## API KEYS / CHAVES DE API
@@ -96,7 +98,7 @@ None of these scripts are supposed to be used under truly professional constrain
 Nenhum desses scripts deve ser usado em meio profissional sem análise prévia. Faça sua própria pesquisa!
 
 
-## SEE ALSO
+## SEE ALSO / VEJA TAMBÉM
 
 Grondilu's [bitcoin-bash-tools](https://github.com/grondilu/bitcoin-bash-tools)
 
