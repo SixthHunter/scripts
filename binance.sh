@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Binance.sh  --  Market data from Binance public APIs
-# v0.13.13  oct/2021  by mountaineerbr
+# v0.13.14  dec/2021  by mountaineerbr
 
 #defaults
 
@@ -757,7 +757,8 @@ do
 		w) #coloured stream of trade prices
 			if command -v lolcat &>/dev/null
 			then SOPT=1 COLORC=(lolcat -p 2000 -F 5)
-			else echo "$SN: err  -- lolcat package is required" >&2
+			else echo "$SN: warning  -- Lolcat package is required" >&2
+				 SOPT=1 COLORC=(cat)
 			fi
 			;;
 		X) #prefer wscat instead of websoccat
@@ -792,14 +793,20 @@ fi
 
 #set websocket pkg
 #websocat command
-if [[ -n "$IOPT$SOPT$BOPT$TOPT" && -z "$CURLOPT" ]]
+if [[ "$IOPT$SOPT$BOPT$TOPT" && -z "$CURLOPT" ]]
 then
 	#choose websocat or wscat
 	if ((XOPT==0)) && command -v websocat &>/dev/null
 	then WEBSOCATC=( websocat -nt --ping-interval 20 -E --ping-timeout 42 ${AUTOR[0]} )
 	elif command -v wscat &>/dev/null
 	then WEBSOCATC=( wscat -c ) ;unset AUTOR
-	else echo "$SN: websocat or wscat is required" >&2 ;exit 1
+	else
+		if [[ "$IOPT$SOPT" ]]
+		then 	echo "Websocat and Wscat not found, setting Curl option -r" >&2
+			CURLOPT=1
+		else
+			echo "$SN: Websocat or Wscat is required" >&2 ;exit 1
+		fi
 	fi
 
 	#set websocket address
