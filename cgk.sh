@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cgk.sh -- coingecko.com api access
-# v0.17.19  oct/2021  by mountaineerbr
+# v0.17.20  dec/2021  by mountaineerbr
 # requires jq and curl/wget
 
 #defaults
@@ -845,17 +845,17 @@ changecf()
 	#try to match in currency list
 	elif 
 		if [[ "$vsto" = vs ]]
-		then grepid=( $(jq -er ".[]|select(.symbol == \"${symbol}\")|.id" "$CGKTEMPLIST1") )
+		then 	grepid=( $(jq -er ".[]|select(.symbol == \"${symbol}\")|.id" "$CGKTEMPLIST1") )
 		elif [[ \ "${FIATCODES[*]}"\  != *\ "$symbol"\ * ]]
-		then grepid=( $(jq -er ".[]|select(.id == \"${symbol}\")|.symbol" "$CGKTEMPLIST1") )
+		then 	grepid=( $(jq -er ".[]|select(.id == \"${symbol}\")|.symbol" "$CGKTEMPLIST1") )
 			[[ \ "${FIATCODES[*]}"\  != *\ "${grepid[0]}"\ * ]] && unset grepid
 		fi
 		((${#grepid[@]}>1))
 	then
 		echo "Multiple ids found for \`$symbol':" >&2
 		select selection in "${grepid[@]}"
-		do break
-		done | tr -d \\n
+		do 	break
+		done
 		echo "${selection:-${grepid[0]}}"
 	elif ((${#grepid[@]}))
 	then
