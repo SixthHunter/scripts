@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cgk.sh -- coingecko.com api access
-# v0.17.20  dec/2021  by mountaineerbr
+# v0.18  jan/2021  by mountaineerbr
 # requires jq and curl/wget
 
 #defaults
@@ -290,7 +290,7 @@ cachef()
 mcapf()
 {
 	#scale
-	SCL="$SCL:-${SCLDEFAULTS}"
+	SCL="${SCL:-$SCLDEFAULTS}"
 	#discard AMOUNT in $1
 	(( $1 )) 2>/dev/null && shift 
 
