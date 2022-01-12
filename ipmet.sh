@@ -1,5 +1,5 @@
 #!/bin/bash
-# v0.3.2
+# v0.3.3
 # imagens de radar do ipmet
 # Instituto de Pesquisas Meteorológicas (UNESP)
 
@@ -11,10 +11,10 @@ SLEEP=6m
 SLEEPERR=30m
 
 #temp dir
-TEMPDIR=/tmp/ipmet_radar
+TEMPD="${TMPDIR:-/tmp}/ipmet_radar"
 
 #keep track of process
-PIDFILE="${TEMPDIR%/}/ipmet.pid"
+PIDFILE="${TEMPD%/}/ipmet.pid"
 #defaults=/tmp/ipmet_radar/ipmet.pid
 
 #url parameters
@@ -28,7 +28,7 @@ tempo entre conexões $SLEEP.
 
 opção: -h  exibir esta página de ajuda.
 opção: -l  puxar imagens a cada $SLEEP.
-cache: $TEMPDIR"
+cache: $TEMPD"
 
 #imagem de radar ipmet
 #https://www.ipmetradar.com.br/2imagemRadar.php
@@ -37,13 +37,13 @@ ipmetf()
 	local data name info time ret
 
 	#create dir if it does not exist
-	[[ -d "$TEMPDIR" ]] || mkdir -pv "$TEMPDIR" || return
+	[[ -d "$TEMPD" ]] || mkdir -pv "$TEMPD" || return
 
 	data="$( curl -L --compressed "$BASEURL/2carga_img.php" )"
 	name="$( sed -nE 's/.*(nova.jpg\?[0-9]+).*/\1/p' <<<"$data" )"
 	info="$( sed -nE 's/.*(Imagem Composta dos Radares.*)<.*/\1/p' <<<"$data" )"
 	time="$( grep -Eo '[0-9]+/[0-9]+/[0-9: ]+$' <<<"$info" )"
-	TEMPFILE="${TEMPDIR%/}/ipmet_${time//[^a-zA-Z0-9:]/_}.jpg"
+	TEMPFILE="${TEMPD%/}/ipmet_${time//[^a-zA-Z0-9:]/_}.jpg"
 
 	#if file does not exist already
 	#download new image to file
