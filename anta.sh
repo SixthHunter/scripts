@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.9  nov/2021  by mountaineerbr
+# v0.18.10  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -644,7 +644,7 @@ fulltf() {
 		#print footer
 		printf '\nhttps://www.oantagonista.com/%s\n' "${COMP#/}"
 
-	} | sed -r ':a; /^\s*$/ {N;ba}; s/( *\n *){2,}/\n/'
+	} | awk '!NF {if (++n <= 1) print; next}; {n=0;print}'
 	    #^collapse multiple bank lines
 
 	return 0
@@ -880,9 +880,6 @@ then YOURAPP=("curl --compressed -s --retry $RETRIES --max-time $TOUT -L -b non-
 fi
 if command -v wget2 &>/dev/null
 then YOURAPP+=("wget2 -t$RETRIES -T$TOUT -qO- --header")
-fi
-if command -v wget2 &>/dev/null
-then YOURAPP+=("wget2 -t$RETRIES -T$TOUT -qO- --header")
 elif command -v wget &>/dev/null
 then YOURAPP+=("wget -t$RETRIES -T$TOUT -qO- --header")
 fi
@@ -904,10 +901,11 @@ if [[ \ "${SUBLIST[*]}"\  = *\ "${1//\/}"\ * ]]
 then
 	echo 'anta.sh: assunto detectado' >&2
 	SUBJECT=/"${1//\/}" ;shift
-elif [[ "$1" = *(/)tag/?* ]]
+elif [[ "$1" = *(http?(s)://www.oantagonista.com/|/)tag/?* ]]
 then
 	echo 'anta.sh: tag/assunto detectado' >&2
-	SUBJECT=/"${1#/}"  SUBJECT="${SUBJECT%/}" ;shift
+	SUBJECT=/"${1#https://www.oantagonista.com}"  SUBJECT="${SUBJECT#/}"
+	SUBJECT="${SUBJECT%/}" ;shift
 elif [[ "$1" = *(/)tag*(/) ]]
 then
 	echo "anta.sh: tag/ requer um ASSUNTO" >&2
