@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # generate html lists from urls
-# v0.3.5  dec/2021  by mountaineerbr
-shopt -s nocasematch  #nocaseglob #extglob 
+# v0.3.6  jan/2021  by mountaineerbr
 
 #maximum length of title
 MAXTITLELEN=300
@@ -21,24 +20,27 @@ MAINLANG='pt*'
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
 
-HELP="ul.sh -- Generate HTML list with url from positional arguments, file or stdin
-usage: ul.sh [OPTION..] [URL..]
-usage: ul.sh [OPTION..] list.txt
-opt: -[0-9]         Set to fetch the Nth <p> tag, def=$PNUM
-opt: -d             Detailed list
-opt: -e MIN_LENGTH  Min length of description before switching to <p>, def=$MINDESCLEN
-opt: -E MAX_LENGTH  Truncate length of description, def=$MAXDESCLEN
-opt: -f             Don't print HTML elements at all, may combine with -pd.
-opt: -h             Print this help page
-opt: -l, -ll        Print hreflang or hreflang and lang attibutes, def=$MAINLANG
-opt: -L LANG        Language for -ll (glob match skips printing), def=$MAINLANG
-opt: -p             Prefer <p> for description
-opt: -P MIN_LENGTH  Min length of <p> tag to fetch, def=$MINPLEN
-opt: -s             Don't print newline between items
-opt: -T MAX_LENGTH  Truncate length of title, def=$MAXTITLELEN
-opt: -u             Don't print <ul> and <dl> tags
-obs: if title checks fail, it falls back to <h1>
-obs: if description checks fail, it falls back to <p>, <h1> and <h2>"
+HELP="NAME
+        ul.sh -- Generate HTML list with url from positional arguments, file or stdin
+USAGE
+        ul.sh [OPTION..] [URL..]
+        ul.sh [OPTION..] list.txt
+OPTIONS
+    -[0-9]         Set to fetch the Nth <p> tag, def=$PNUM
+    -d             Detailed list
+    -e MIN_LENGTH  Min length of description before switching to <p>, def=$MINDESCLEN
+    -E MAX_LENGTH  Truncate length of description, def=$MAXDESCLEN
+    -f             Don't print HTML elements at all, may combine with -pd.
+    -h             Print this help page
+    -l, -ll        Print hreflang or hreflang and lang attibutes, def=$MAINLANG
+    -L LANG        Language for -ll (glob match skips printing), def=$MAINLANG
+    -p             Prefer <p> for description
+    -P MIN_LENGTH  Min length of <p> tag to fetch, def=$MINPLEN
+    -s             Don't print newline between items
+    -T MAX_LENGTH  Truncate length of title, def=$MAXTITLELEN
+    -u             Don't print <ul> and <dl> tags"
+#obs: if title checks fail, it falls back to <h1>
+#obs: if description checks fail, it falls back to <p>, <h1> and <h2>
 
 
 #curl
@@ -97,11 +99,15 @@ lif()
 
     #LANGUAGE
     ((OPTL)) && {
-         l="${page#*lang=[\'\"$'\n']}" l="${l%%[\'\"]*}" l="${l//[$IFS]}"
-         [[ -z "$l" || ( "$l" && "$l" = $MAINLANG ) ]] && unset l lang hreflang || {
-         hreflang=" hreflang=\"$l\""  lang=" lang=\"$l\""
-             ((OPTL==1)) && unset lang
-         }
+         [[ "$page" =~ lang=[\'\"$'\n']([^\'\"]+)[\'\"] ]]
+         l="${BASH_REMATCH[1]}" l="${l//[$IFS]}"
+         if [[ -z "$l" ]]
+	 then    unset l lang hreflang ;echo "warning: \`lang' attribute not found -- <$1>" >&2
+         elif [[ "$l" && "$l" = $MAINLANG ]]
+	 then    unset l lang hreflang
+	 else    hreflang=" hreflang=\"$l\""  lang=" lang=\"$l\""
+                 ((OPTL==1)) && unset lang
+         fi
      }
 
     #final edits
@@ -139,8 +145,7 @@ trim()
 
 #parse options
 while getopts 0123456789de:E:fhlL:pP:sT:u c
-do
-    case $c in
+do  case $c in
         [0-9]) PNUM="$PNUM$c" OPTP=1 ;;
         d) OPTD=1 ;;
         e) MINDESCLEN=$OPTARG ;;
@@ -154,11 +159,12 @@ do
         s) OPTS=1 ;;
         T) MAXTITLELEN=$OPTARG ;;
         u) OPTU=1 ;;
-        \?) exit 1;;
+        \?) exit 1 ;;
     esac
 done
 shift $((OPTIND -1))
 unset c
+shopt -s nocasematch  #nocaseglob #extglob 
 
 #try and choose terminal browser to process html
 if command -v w3m
