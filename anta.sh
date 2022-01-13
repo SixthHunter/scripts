@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.10  jan/2022  by mountaineerbr
+# v0.18.11  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -901,10 +901,10 @@ if [[ \ "${SUBLIST[*]}"\  = *\ "${1//\/}"\ * ]]
 then
 	echo 'anta.sh: assunto detectado' >&2
 	SUBJECT=/"${1//\/}" ;shift
-elif [[ "$1" = *(http?(s)://www.oantagonista.com/|/)tag/?* ]]
+elif [[ "$1" = ?(http?(s)://www.oantagonista.com/|/)tag/?* ]]
 then
 	echo 'anta.sh: tag/assunto detectado' >&2
-	SUBJECT=/"${1#https://www.oantagonista.com}"  SUBJECT="${SUBJECT#/}"
+	SUBJECT="${1#https://www.oantagonista.com}"  SUBJECT=/"${SUBJECT#/}"
 	SUBJECT="${SUBJECT%/}" ;shift
 elif [[ "$1" = *(/)tag*(/) ]]
 then
