@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.11  jan/2022  by mountaineerbr
+# v0.18.18  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -16,8 +16,7 @@ TENTATIVAS=6
 
 #caminho do script para funão de update
 SCRIPT="${BASH_SOURCE[0]}"
-#não inunde o servidor
-#espera entre chamadas (em segundos)
+#não inunde o servidor (espera entre chamadas, em segundos)
 FLOOD=0.4
 
 #update url
@@ -45,10 +44,10 @@ HELP="Anta.sh -- Puxa os artigos de <oantagonista.com>
 
 
 SINOPSE
-	anta.sh  [-afl] [ÍNDICE..|URL..]
-	anta.sh  [-afl] [-sNUM|-pNUM]
-	anta.sh  [-afl] -r [-sNUM]
-	anta.sh  [-afl] [ASSUNTO] [ÍNDICE..]
+	anta.sh  [-af] [ÍNDICE..|URL..]
+	anta.sh  [-af] [-sNUM|-pNUM]
+	anta.sh  [-af] -r [-sNUM]
+	anta.sh  [-af] [ASSUNTO] [ÍNDICE..]
 	anta.sh  [-huuv]
 
 
@@ -189,13 +188,13 @@ EXEMPLOS DE USO
 	(*3 ) Reacesar a página inicial automaticamente e imprimir o
 	      texto completo de artigos novos, usar o paginador Les.
 
-		$ anta.sh -frl
+		$ anta.sh -fr | less
 
 
 	( 4 ) Textos completos dos artigos das primeiras 4 páginas
- 	      do portal (dica: use o paginador less também):
+ 	      do portal:
 
-		$ anta.sh -f -l -p4
+		$ anta.sh -f -p4 | less
 
 
 	( 5 ) Puxar artigos completos das URLs (opção -f é opcional):
@@ -237,7 +236,6 @@ OPÇÕES
 	-f [ÍNDICE..|URL..]
 		  Texto integral dos artigos das páginas iniciais.
 	-h 	  Mostra esta ajuda.
-	-l 	  Encanar saída para o paginador Less.
 	-p NUM    Número de páginas a serem puxadas; padrão=1 .
 	-r 	  Reacessar a página inicial em intervalos de tempo.
 	-s NUM    Intervalo de tempo entre reacessos da opção -r ; 
@@ -246,20 +244,11 @@ OPÇÕES
 	-uu 	  Atualização do script.
 	-v 	  Mostra a versão do script."
 
-
 #Orign servers
 SERVERS=(www.oantagonista.com)
 ALTSERVERS=(cache.oantagonista.com cms.oantagonista.com m.oantagonista.com wp.oantagonista.com editores.oantagonista.com)
-#'oantagonista.com' -- redirection to antagonista+
-#'52.204.39.109'
-#'3.82.68.200'
-#'18.204.255.62'
-#'52.72.53.233'
-#'34.198.178.99'
-#'54.210.110.10'
-#'52.86.216.106'
-#'34.207.47.120'
-#'18.214.96.27'
+#'52.204.39.109', '3.82.68.200', '18.204.255.62', '52.72.53.233', '34.198.178.99'
+#'54.210.110.10', '52.86.216.106', '34.207.47.120', '18.214.96.27'
 
 AGENTS=('User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS 7.5; Trident/5.0; IEMobile/9.0)' 'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1' 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41' 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36' 'User-Agent: Mozilla/5.0 (Linux; Android 6.0.1; SGP771 Build/32.2.A.0.253; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/52.0.2743.9[<0;45;17M8 Safari/537.36' 'User-Agent: Mozilla/5.0 (Windows Phone 10.0; Android 4.2.1; Microsoft; RM-1127_16056) AppleWebKit/537.36(KHTML, like Gecko) Chrome/42.0.2311.135 Mobile Safari/537.36 Edge/12.10536' 'User-Agent: Mozilla/5.0 (Linux; Android 6.0.1; SGP771 Build/32.2.A.0.253; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/52.0.2743.98 Safari/537.36' 'User-Agent: Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36' 'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Mobile Safari/537.36' 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2486.0 Safari/537.36 Edge/13.10586' 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0' 'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko' 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0' 'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Mobile Safari/537.36')
 
@@ -366,8 +355,8 @@ cerrf()
 		     -e 'Page not found' -e 'p.gina n.o encontrada' \
 		     -e 'Error processing request' <<< "$PAGE" >&2
 	then
-		NOTFOUND=1
 		printf 'anta.sh: erro: página não encontrada -- %s\n' "$COMP" >&2
+		NOTFOUND=1
 	elif [[ -z "$PAGE" ]] || grep -aFiq -e 'has been limited' -e 'you were blocked' \
 		-e 'to restrict access' -e 'access denied' -e 'temporarily limited' \
 		-e 'you have been blocked' -e 'has been blocked' <<< "$PAGE" >&2
@@ -379,17 +368,13 @@ cerrf()
 		printf 'anta.sh: erro: não parece ser artigo de <oantagonista> -- %s\n' "$COMP" >&2
 		NOTFOUND=1
 	fi
-
 	return 0
 }
 
-
 # Cheque por update
 updatef() {
-	#trap exit
 	trap updatecleanf EXIT TERM INT
-	
-	TMPFILE="$( mktemp )"
+	TMPFILE=$(mktemp)
 
 	#download script from url
 	${YOURAPP[0]} "${AGENTS[0]}" "$UPURL" >"$TMPFILE"
@@ -421,7 +406,7 @@ updatef() {
 updatecleanf() { 
 	#disable trap
 	trap \  EXIT TERM INT
-	[[ -f "$TMPFILE" ]] && rm "$TMPFILE"
+	[[ -e "$TMPFILE" ]] && rm "$TMPFILE"
 	exit
 }
 
@@ -442,20 +427,18 @@ puxarpgsf() {
 		#make sure to get links from original server
 		PAGE="$( ${YOURAPP[${RANDOM} % ${#YOURAPP[@]}]}  "${AGENTS[${RANDOM} % ${#AGENTS[@]}]}" "${SERVERS[0]}${SUBJECT}/${COMP#/}" )"
 
-		#erro?
+		#erros?
 		cerrf && return 0
-
-		#havendo erro, chamar curl mais uma vez
+		#havendo erros, chamar curl mais uma vez
 		printf '\ranta.sh: tentativa %s\n' "$N" 1>&2
-
 		sleep "$SLEEP"
 		(( SLEEP = SLEEP + 2 )) 
 	done
 
 	# Check if it was succesfull at last or exit with error
 	if cerrf
-	then return 0
-	else return 1
+	then 	return 0
+	else 	return 1
 	fi
 }
 
@@ -475,27 +458,19 @@ anta() {
 			return 1
 		#page not found?
 		elif ((NOTFOUND))
-		then return 0
+		then 	return 0
 		fi
 
 		#imprime a página e processa
 		POSTS="$( <<<"$PAGE" sed -nE '/<div id="p[0-9]+"/,/id="mais-lidas"/ p' | sed  '$d' | sed -n '/<article.*/,/<\/article/ p' )"
-		#POSTS="$( <<<"$PAGE" sed -nE '/<div id="p[0-9]+"/,/event_label":\s*"p[0-9]+c[0-9]+".*<\/script><\/div>/  { /<article.*/,/(<\/article|<\/h2><\/a>)/ p }' )"
-		#POSTS="$( <<<"$PAGE" sed -nE '\|<div class="postmeta|,\|</div| p' )"
-		#sed ':a;N;$!ba;s/<p>\s*\n\s*\n*\s*/<p>/g' <<<"$PAGE" \
-		#| sed ':a;N;$!ba;s/\n*\s*\n\s*<\/p>/<\/p>/g' \
-		#grep -a 'id="post_[0-9]' <<<"$PAGE"
 
 		#continue if $OLDPOSTS and $POSTS are the same (-r OPTION)
 		if ((ROLLOPT)) && [[ "$POSTS" = "$OLDPOSTS" ]]
-		then :
+		then 	:
 		#process posts
-		else
-			#print links
+		else 	#print links
 			getlinksf <<<"$PAGE" | tac
 			echo '==='
-
-			#process 
 			<<<"$POSTS" sed -E \
 				-e '/class="timer-icon"><\/span>[0-9]+ (ano|dia|semana|me|mese|hora|minuto|segundo)s? atr.s/d' \
 				-e 's/[^pagm]>/&\n/g ;s/<\/article[^>]*>/&\n===/g' \
@@ -518,7 +493,6 @@ anta() {
 		
 		#parar se foi especificado número de index de pg específica
 		(( ONLYONE )) && break
-
 		#dont flood the server
 		sleep "$FLOOD"
 	done
@@ -547,12 +521,11 @@ fulltf() {
 	else
 		#puxa página do artigo texto integral
 		if ! puxarpgsf
-		then
-			printf '\nanta.sh: erro: acesso limitado -- %s  [%s]\n' "$COMP" "$SECONDS" >&2
+		then 	printf '\nanta.sh: erro: acesso limitado -- %s  [%s]\n' "$COMP" "$SECONDS" >&2
 			return 1
 		#page not found?
 		elif ((NOTFOUND))
-		then return 0
+		then 	return 0
 		fi
 	fi
 
@@ -578,11 +551,9 @@ fulltf() {
 		#processa página
 		#get all lines with <p>
 		if [[ "$COMP" = */podcast/* ]]
-		then
-			#if podcast grep only description line
+		then 	#if podcast grep only description line
 			<<<"$PAGE" sed -n '/^\s*<p>/p'
-		else
-			#get all lines with <p> for all other pages
+		else 	#get all lines with <p> for all other pages
 			<<<"$PAGE" sed -E \
 				-e '/class="timer-icon"><\/span>[0-9]+ (ano|dia|semana|me|mese|hora|minuto|segundo)s? atr.s/d' \
 				-e '/(class=.*contato_reda..o|class="reda..o)/ d' \
@@ -615,7 +586,6 @@ fulltf() {
 			    -e 's/<\/li>/&\n/g ;s/<\/[ou]l>/&\n<layout>\n/g' 
 	)"
 	#https://stackoverflow.com/questions/5315464/email-formatting-basics-links-in-plain-text-emails
-	#-e 's/strong><ul><li><a.*//' #noticias relacionadas
 	
 	#get link references
 	hrefs=( $(getlinksfullf <<<"$art") )
@@ -634,7 +604,6 @@ fulltf() {
 		echo '====        '
 		#print article
 		sedhtmlf <<<"$cab" | sed "/^[0-9][0-9]\.[0-9][0-9]\./ s/$/ [\$\$ $par]\n$auth\n/"
-
 		echo "$art"
 
 		#print article refs
@@ -663,26 +632,22 @@ fulltf() {
 # e puxar artigos completos
 linksf() {
 	local ret
-	typeset -a ret
-
 	#timer de tempo execução de tarefa
 	SECONDS=0
 	# Check for user-suppplied links
 	if [[ "$*" = */* ]]
 	then
-		for i in $@
-		do
-			# Arrumar variável para passar nos testes da 'puxarpgsf'
+		for i
+		do 	# Arrumar variável para passar nos testes da 'puxarpgsf'
 			PAGINAS=0
 			COMP="${i,,}"
 			COMP="${COMP/https:\/\/www.oantagonista.com}"
-			fulltf ;ret+=($?)
+			fulltf ;((ret+=$?))
 		done
 	else
 		# Get Links from initial pages
 		for ((i=PAGINAS;i>=1;i--))
-		do
-			#barra de acompanhamento
+		do 	#barra de acompanhamento
 			printf '\r\033[2KLinks %s/%s\r' "$i" "$PAGINAS" 1>&2
 
 			#prepara o link da página inicial a ser puxada
@@ -692,25 +657,22 @@ linksf() {
 			puxarpgsf
 
 			#pega links para artigos integrais
-			LINKS="$( getlinksf <<<"$PAGE" )"
+			LINKS=$( getlinksf <<<"$PAGE" )
 
 			#crawl each link
 			while read COMP
-			do
-				#avoid duplicate articles links
+			do 	#avoid duplicate articles links
 				if [[ "${LINKSBUFFER[*]}" = *"$COMP"* ]]
-				then continue
-				#add to links buffer
-				else LINKSBUFFER+=( "$COMP" )
+				then 	continue
+				else 	LINKSBUFFER+=("$COMP")
 				fi
 
 				#get full article page
-				fulltf || { ret+=(1) ;continue ;}
-
+				fulltf || { ((ret+=1)) ;continue ;}
 				#dont flood the server
 				sleep "$FLOOD"
 
-			done <<<"$(tac <<<"${LINKS//https:\/\/www.oantagonista.com/}" )"
+			done <<<"$(tac <<<"${LINKS/https:\/\/www.oantagonista.com/}" )"
 			
 			sleep "$FLOOD"
 
@@ -722,8 +684,7 @@ linksf() {
 		(( ROLLOPT )) && PRINTT="(${TEMPO[*]})"
 		printf '>Puxado em %s  %s [%s]\n' "$(date -R)" "$PRINTT" "$SECONDS"
 	fi
-	
-	return $(( ${ret[@]/%/+} 0 ))
+	return $ret
 }
 
 ## Puxar funções das opções
@@ -736,38 +697,27 @@ selectf()
 	if (($#)) || (( PAGINAS )) || {
 		 (( ROLLOPT + PAGINAS == 0 )) && PAGINAS=1
 	}
-	then
-		#opção -f, textos completo
+	then 	#opção -f, textos completo
 		if (( FULLOPT ))
-		then
-
-			#index opt
+		then 	#index opt
 			if (( ONLYONE ))
-			then
-				#indicies de pgs como arg posicionais
-				for PAGINAS in "$@"
-				do linksf ;RET+=($?)
+			then 	#indicies de pgs como arg posicionais
+				for PAGINAS
+				do 	linksf ;((RET+=$?))
 				done
-			else
-				#opção padrão, puxar primeira pg e sair
-				#ou -NUM
+			else 	#opção padrão, puxar primeira pg e sair, ou -NUM
 				linksf "$@"
-				RET+=($?)
+				((RET+=$?))
 			fi
 		else
-			#só os resumos das matérias das pgs iniciais
-			#index opt
+			#só os resumos das matérias das pgs iniciais, index opt
 			if (( ONLYONE ))
-			then
-				#indicies de pgs como arg posicionais
-				for PAGINAS in "$@"
-				do anta ;RET+=($?)
+			then 	#indices de pgs como arg posicionais
+				for PAGINAS
+				do 	anta ;((RET+=$?))
 				done
-			else
-				#opção padrão, puxar primeira pg e sair
-				#ou -NUM
-				anta
-				RET+=($?)
+			else 	#opção padrão, puxar primeira pg e sair, ou -NUM
+				anta ;((RET+=$?))
 			fi
 		fi
 	fi
@@ -775,20 +725,18 @@ selectf()
 	# -r Anta Rolante
 	if (( ROLLOPT ))
 	then
-		[[ -n "${OPTL[*]}" ]] || echo "anta.sh: opção antagonista rolante" >&2
+		echo "anta.sh: opção antagonista rolante" >&2
 
 		#loop forever
 		#then set to always get first page
 		XAGAIN=780  AGAIN="$XAGAIN"
 		[[ "$PAGINAS" = 0 ]] || PAGINAS=1
 		while :
-		do
-			# Loop para puxar as notícias
+		do 	# Loop para puxar as notícias
 			while :
-			do
-				if (( FULLOPT ))
-				then linksf || break
-				else anta || break
+			do 	if (( FULLOPT ))
+				then 	linksf || break
+				else 	anta || break
 				fi
 				
 				sleep "${TEMPO[@]}"
@@ -811,68 +759,38 @@ selectf()
 while getopts :afwhlp:rs:uv0123456789 opt
 do
 	case $opt in
-		[0-9])
-			# Páginas para Puxar
-			PAGINAS="${PAGINAS}${opt}"
+		[0-9]) 	PAGINAS="${PAGINAS}${opt}"
 			;;
-		a)
-			#use alternative servers
+		a) 	#use alternative servers
 			OPTALT=1
 			;;
-		f|w)
-			# Textos completos (Full text)
+		f|w) 	# Textos completos (Full text)
 			FULLOPT=1
 			;;
-		h)
-			# Show Help
-			HELPOPT=1
+		h) 	# Print Help
+			echo "$HELP" ;exit 0
 			;;
-		l)
-			#use the Less pager
-			OPTL=1
+		l) 	echo "$0: option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
+		p) 	PAGINAS="$OPTARG"
 			;;
-		p)
-			# Páginas para Puxar
-			PAGINAS="$OPTARG"
-			;;
-		r)
-			# Anta Rolante
+		r) 	# Anta Rolante
 			ROLLOPT=1
 			;;
-		s)
-			#tempo entre reacessos
+		s) 	#tempo entre reacessos
 			TEMPO=($OPTARG)
 			;;
-		u)
-			# Checar update ou realizar o update
+		u) 	# Checar update ou realizar o update
 			((++UPOPT))
 			;;
-		v)
-			# Version of Script
-			grep -Fm1 '# v' "${BASH_SOURCE[0]}"
-			exit 0
+		v) 	# Version of Script
+			grep -Fm1 '# v' "${BASH_SOURCE[0]}" ;exit
 			;;
-		\?)
-			# Invalid opt
-			echo "anta.sh: erro: opção inválida -- -$OPTARG" >&2
-			exit 1
+		\?) 	# Invalid opt
+			echo "anta.sh: erro: opção inválida -- -$OPTARG" >&2 ;exit 1
 			;;
 	esac
 done
 shift $((OPTIND -1))
-typeset -a RET
-export RET
-
-#chamar algumas opções
-#ajuda (com e sem pager)
-if ((HELPOPT && OPTL))
-then echo "$HELP" | less ;exit 0
-elif ((HELPOPT))
-then echo "$HELP" ;exit 0
-fi
-
-#set variables
-typeset -a RET
 
 # Test if cURL and Wget are available
 if command -v curl &>/dev/null
@@ -926,11 +844,5 @@ elif [[ "$*" = +([0-9\ ]) ]]; then
 fi
 
 #selecionar opção
-#usar pager?
-if ((OPTL))
-then selectf "$@" | less
-else selectf "$@"
-fi
-
-exit $(( ${RET[@]/%/+} 0 ))
-
+selectf "$@"
+exit $RET
