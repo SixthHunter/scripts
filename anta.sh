@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.18  jan/2022  by mountaineerbr
+# v0.18.19  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -641,7 +641,7 @@ linksf() {
 		do 	# Arrumar variável para passar nos testes da 'puxarpgsf'
 			PAGINAS=0
 			COMP="${i,,}"
-			COMP="${COMP/https:\/\/www.oantagonista.com}"
+			COMP="${COMP//https:\/\/www.oantagonista.com}"
 			fulltf ;((ret+=$?))
 		done
 	else
@@ -657,7 +657,7 @@ linksf() {
 			puxarpgsf
 
 			#pega links para artigos integrais
-			LINKS=$( getlinksf <<<"$PAGE" )
+			LINKS=$(getlinksf <<<"$PAGE")
 
 			#crawl each link
 			while read COMP
@@ -672,7 +672,7 @@ linksf() {
 				#dont flood the server
 				sleep "$FLOOD"
 
-			done <<<"$(tac <<<"${LINKS/https:\/\/www.oantagonista.com/}" )"
+			done <<<"$(tac <<<"${LINKS//https:\/\/www.oantagonista.com/}" )"
 			
 			sleep "$FLOOD"
 
@@ -770,7 +770,7 @@ do
 		h) 	# Print Help
 			echo "$HELP" ;exit 0
 			;;
-		l) 	echo "$0: option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
+		l) 	echo "${0##*/}: warning -- option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
 		p) 	PAGINAS="$OPTARG"
 			;;
 		r) 	# Anta Rolante
