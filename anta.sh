@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.19  jan/2022  by mountaineerbr
+# v0.18.20  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -44,10 +44,10 @@ HELP="Anta.sh -- Puxa os artigos de <oantagonista.com>
 
 
 SINOPSE
-	anta.sh  [-af] [ÍNDICE..|URL..]
-	anta.sh  [-af] [-sNUM|-pNUM]
-	anta.sh  [-af] -r [-sNUM]
-	anta.sh  [-af] [ASSUNTO] [ÍNDICE..]
+	anta.sh  [-afl] [ÍNDICE..|URL..]
+	anta.sh  [-afl] [-sNUM|-pNUM]
+	anta.sh  [-afl] -r [-sNUM]
+	anta.sh  [-afl] [ASSUNTO] [ÍNDICE..]
 	anta.sh  [-huuv]
 
 
@@ -142,7 +142,7 @@ GARANTIA E REQUISITOS
 		bc1qlxm5dfjl58whg6tvtszg5pfna9mn2cr2nulnjr
 
 
-BUGS
+NOTAS E BUGS
 	Observe que se uma nova notícia for publicada durante o funciona-
 	mento do programa ao baixar múltiplas páginas contíguas, irá
 	perder-se algum número de reportagens pois elas são rolantes.
@@ -152,9 +152,6 @@ BUGS
 	vidores alternativos podem demorar um pouco para sincronizarem
 	com o servidor padrão.
 	
-	Algumas sobreposições do texto com mensagens de carregamento
-	enviadas pelo stderr podem ocorrer.
-
 	Não sendo um erro do script, artigos podem aparecer em duplicata
 	devido ao próprio design do site.
 
@@ -190,11 +187,13 @@ EXEMPLOS DE USO
 
 		$ anta.sh -fr | less
 
+		$ anta.sh -frl
+
 
 	( 4 ) Textos completos dos artigos das primeiras 4 páginas
  	      do portal:
 
-		$ anta.sh -f -p4 | less
+		$ anta.sh -f -l -p4
 
 
 	( 5 ) Puxar artigos completos das URLs (opção -f é opcional):
@@ -236,6 +235,7 @@ OPÇÕES
 	-f [ÍNDICE..|URL..]
 		  Texto integral dos artigos das páginas iniciais.
 	-h 	  Mostra esta ajuda.
+	-l 	  Encanar saída para o paginador Less.
 	-p NUM    Número de páginas a serem puxadas; padrão=1 .
 	-r 	  Reacessar a página inicial em intervalos de tempo.
 	-s NUM    Intervalo de tempo entre reacessos da opção -r ; 
@@ -770,7 +770,10 @@ do
 		h) 	# Print Help
 			echo "$HELP" ;exit 0
 			;;
-		l) 	echo "${0##*/}: warning -- option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
+		#l) 	echo "${0##*/}: warning -- option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
+		l) 	#use the Less pager
+			OPTL=1
+			;;
 		p) 	PAGINAS="$OPTARG"
 			;;
 		r) 	# Anta Rolante
@@ -791,6 +794,13 @@ do
 	esac
 done
 shift $((OPTIND -1))
+#chamar algumas opções
+if ((HELPOPT))
+then 	if ((OPTL))
+	then 	echo "$HELP" | less
+	else 	echo "$HELP"
+	fi ;exit 0
+fi
 
 # Test if cURL and Wget are available
 if command -v curl &>/dev/null
@@ -844,5 +854,8 @@ elif [[ "$*" = +([0-9\ ]) ]]; then
 fi
 
 #selecionar opção
-selectf "$@"
+if ((OPTL))
+then 	selectf "$@" | less -b-1
+else 	selectf "$@"
+fi
 exit $RET
