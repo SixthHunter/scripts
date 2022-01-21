@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.18.20  jan/2022  by mountaineerbr
+# v0.19  jan/2022  by mountaineerbr
 
 #padrões
 
@@ -767,10 +767,9 @@ do
 		f|w) 	# Textos completos (Full text)
 			FULLOPT=1
 			;;
-		h) 	# Print Help
-			echo "$HELP" ;exit 0
+		h) 	#Help
+			HELPOPT=1
 			;;
-		#l) 	echo "${0##*/}: warning -- option -l is deprecated."$'\n'"Pipe to \`less' manually." >&2 ;;
 		l) 	#use the Less pager
 			OPTL=1
 			;;
