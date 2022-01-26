@@ -70,11 +70,11 @@ __blockchair.btcoutputs.sh__ |  Download blockchair output dump files systematic
 __zzz.bitcoin.parsedTxs.txt__ | Example of parsed transactions from block 714176
 
 
-## TERMUX USERS
+## ANDROID TERMUX USERS
 
 These scripts can run under Termux, however some of them need a web socket such as `websocat`.
 
-Vi's `websocat` bincaries for ARM, MacOS and FreeBSD [can be downloaded from here](https://github.com/vi/websocat/releases).
+Vi's `websocat` bincaries for Android (ARM), MacOS and FreeBSD [can be downloaded from here](https://github.com/vi/websocat/releases).
 
 Hroptatyr's [`dateutils`](https://github.com/hroptatyr/dateutils) can be compiled in Termux. I suggest installing the following packes before trying to [build `dateutils` as per developer intructions](https://github.com/hroptatyr/dateutils/blob/master/INSTALL) in Termux `v0.118.0`:
 
