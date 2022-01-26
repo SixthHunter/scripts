@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cgk.sh -- coingecko.com api access
-# v0.18  jan/2021  by mountaineerbr
+# v0.18.1  jan/2021  by mountaineerbr
 # requires jq and curl/wget
 
 #defaults
@@ -854,7 +854,7 @@ changecf()
 	then
 		echo "Multiple ids found for \`$symbol':" >&2
 		select selection in "${grepid[@]}"
-		do 	break
+		do 	[[ \ "${grepid[*]}"\  = *\ "$selection"\ * ]] && break
 		done
 		echo "${selection:-${grepid[0]}}"
 	elif ((${#grepid[@]}))
