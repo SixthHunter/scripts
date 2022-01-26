@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ddate.sh - Calculate time ranges between dates
-# v0.15.6  nov/2021  mountaineerbr  GPLv3+
+# v0.15.7  jan/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 	# DEVELOPMENT OF THIS SCRIPT HAS BEEN HALTED BECAUSE
 	# THE DEVELOPER DOES NOT KNOW WHAT IS GOING ON ANYMORE!
@@ -551,7 +551,8 @@ mainf()
 	#following is required for single unit range calculation
 	#calculate time ranges by single units, if bc is available
 	if
-		range_single_y=$(bc <<<"scale=$SCL; $range / ($date1_year_days_adj * 3600 * 24)" )
+		#range_single_y=$(bc <<<"scale=$SCL; $range / ($date1_year_days_adj * 3600 * 24)" )
+		range_single_y=$(bc <<<"scale=$SCL; $years_between +( ($range - (($daycount_between_years + $daycount_between_leap_years) * 3600 * 24) ) / ($date1_year_days_adj * 3600 * 24) )" )
 	then
 		range_single_mo=$(bc <<<"scale=$SCL; $monthcount + ( ( ($d_left_save * 3600 * 24) + ($h * 3600) + ($m * 60) + $s) / ($date1_month_max_day * 3600 * 24) )" )
 		range_single_w=$(bc <<<"scale=$SCL; $range / 604800")
