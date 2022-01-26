@@ -70,6 +70,20 @@ __blockchair.btcoutputs.sh__ |  Download blockchair output dump files systematic
 __zzz.bitcoin.parsedTxs.txt__ | Example of parsed transactions from block 714176
 
 
+## TERMUX USERS
+
+These scripts can run under Termux, however some of them need a web socket such as `websocat`
+
+Vi's `websocat` bincaries for ARM, MacOS and FreeBSD [can be downloaded from here](https://github.com/vi/websocat/releases).
+
+Hroptatyr's [`dateutils`](https://github.com/hroptatyr/dateutils) can be compiled in Termux. I suggest installing the following packes before trying to [build `dateutils` as per developer intructions](https://github.com/hroptatyr/dateutils/blob/master/INSTALL) in Termux `v0.118.0`:
+
+```bash
+ pkg install gperf flex bison python python2 cmake automake libtool build-essential binutils cmake ctags
+ ```
+ 
+I compiled `dateutils` binaries a few days ago and I cannot remember specific details. In general, if needed, check check that `$TMPD` is set properly (should be set automatically) and review source code for `/tmp` references and change to hard location under Termux `$PREFIX` or set something like `$PREFIX/tmp` in shell scripts. On other tips, if software is not in the official repos and you cannot compile it from source, try to look for compiled binaries of the software for your platform.
+
 ## FURTHER HELP AND USAGE EXAMPLES / MAIS AJUDA E EXEMPLOS DE USO
 
 Check script help pages with option -h.
