@@ -72,7 +72,7 @@ __zzz.bitcoin.parsedTxs.txt__ | Example of parsed transactions from block 714176
 
 ## TERMUX USERS
 
-These scripts can run under Termux, however some of them need a web socket such as `websocat`
+These scripts can run under Termux, however some of them need a web socket such as `websocat`.
 
 Vi's `websocat` bincaries for ARM, MacOS and FreeBSD [can be downloaded from here](https://github.com/vi/websocat/releases).
 
