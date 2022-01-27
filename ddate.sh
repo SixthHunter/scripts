@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ddate.sh - Calculate time ranges between dates
-# v0.15.9  jan/2022  mountaineerbr  GPLv3+
+# v0.15.10  jan/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 	# DEVELOPMENT OF THIS SCRIPT HAS BEEN HALTED BECAUSE
 	# THE DEVELOPER DOES NOT KNOW WHAT IS GOING ON ANYMORE!
@@ -324,7 +324,7 @@ mainf()
 		do 	eval "$var=${!var##*(0)}"
 		done
 	fi
-	[[ "${yearA:?user input required}" && "${yearB:?user input required}" && "$yearA$dayA$yearB$dayB" = +([0-9 ]) ]] || return 2
+	[[ "${yearA:?user input required}" && "${yearB:?user input required}" && "$yearA$dayA$yearB$dayB" = +([0-9 +-]) ]] || return 2
 	((monthA>12 || monthB>12 || dayA>31 || dayB>31 || hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60)) && { echo "err: illegal user input" >&2 ;return 2 ;}
 
 
