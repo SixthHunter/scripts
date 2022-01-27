@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ddate.sh - Calculate time ranges between dates
-# v0.15.7  jan/2022  mountaineerbr  GPLv3+
+# v0.15.8  jan/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 	# DEVELOPMENT OF THIS SCRIPT HAS BEEN HALTED BECAUSE
 	# THE DEVELOPER DOES NOT KNOW WHAT IS GOING ON ANYMORE!
@@ -32,7 +32,7 @@ DESCRIPTION
 	months or weeks or days or hours or minutes or seconds alone.
 	
 	It also displays a compound range with all the above range units
-	into consideration, see BUGS below.
+	into consideration.
 
 	DATE strings must be ISO-8601 \`%Y-%m-%dT%H:%M:%S' if using FreeBSD
 	\`date' or set an input time format with option \`-f FMT'. On the
@@ -87,11 +87,12 @@ SEE ALSO
 
 
 BUGS
-	Testing reveals about 2% error rate of the compound range when
-	compared to the output of \`datediff' due to inconsistent refine-
-	ment rules of this script. Testing was limited, thus we cannot
-	generalise what types of errors occur or determine more precise
-	error rate.
+	Testing reveals about 2% error rate of the compound range, special-
+	ly with dates in February and/or different times between dates, when
+	compared to the output of \`datediff'. This is manily due to incon-
+	sistent refinement rules in this script. Testing was limited, thus
+	we cannot more precisely determine error types (and their fix) nor
+	generalise error rate.
 
 	This script needs a well defined methodology of refining rules
 	for the compound calculation range. Currently, refinement rules
@@ -280,21 +281,20 @@ mainf()
 	else
 		unset unix1 unix2
 		[[ "$tzA$tzB" ]] && echo "warning: time zone is not supported without \`date' package!" >&2
-
-		##Time zone / offset support
-		#Time zone talk is a complicated business and we should not bother about supporting it..
-		#may support a case statement for UTC/UTC0 and GMT, which should be substituted for +00:00;
-		#-00:00 and +24:00 are valid and should equal to +00:00;
-		#must decide what to do with environment $TZ, how to interpret input date string with a timezone?
-		#support up to `seconds' for time zone adjustment;
-		#POSIX time does not account for leap seconds;
-		#POSIX defines time zone by the $TZ variable which takes a different form from ISO8601 standards;
-		#we should not bother to support offsets or, std (standard) or dst (daylight saving time) in timezones;
-		#IPC#see: <https://www.iana.org/time-zones>
-		#we may support OFFSET instead of TIME ZONE, see distinction:
-		#<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
-		#America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
 	fi
+	##Time zone / offset support
+	#Time zone talk is a complicated business and we should not bother about supporting it..
+	#may support a case statement for UTC/UTC0 and GMT, which should be substituted for +00:00;
+	#-00:00 and +24:00 are valid and should equal to +00:00;
+	#must decide what to do with environment $TZ, how to interpret input date string with a timezone?
+	#support up to `seconds' for time zone adjustment;
+	#POSIX time does not account for leap seconds;
+	#POSIX defines time zone by the $TZ variable which takes a different form from ISO8601 standards;
+	#we should not bother to support offsets or, std (standard) or dst (daylight saving time) in timezones;
+	#IPC#see: <https://www.iana.org/time-zones>
+	#we may support OFFSET instead of TIME ZONE, see distinction:
+	#<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
+	#America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
 		
 	#load ISO8601 dates from `date' or user input
 	IFS="${IFS}T/.:+-" read yearA monthA dayA hourA minA secA tzA <<<"${date1_iso8601:-${date1_iso8601_tz:-$1}}"
@@ -320,8 +320,12 @@ mainf()
 		set -- "$2" "$1" "${@:3}"
 		IFS="${IFS}T/.:+-" read yearA monthA dayA hourA minA secA tzA <<<"$1"
 		IFS="${IFS}T/.:+-" read yearB monthB dayB hourB minB secB tzB <<<"$2"
+		for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
+		do 	eval "$var=${!var##*(0)}"
+		done
 	fi
-	[[ "$yearA" && "$yearB" ]] || ret=1
+	[[ "${yearA:?user input required}" && "${yearB:?user input required}" ]] || return 2
+	((monthA>12 || monthB>12 || dayA>31 || dayB>31 || hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60)) && { echo "err: illegal user input" >&2 ;return 2 ;}
 
 
 	##Count leap years and sum leap and non leap years days,
@@ -459,6 +463,12 @@ mainf()
 		((d_left -= date1_month_max_day - date3_month_max_day ))
 	fi
 	#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*
+	#I believe most of the errors I got from testing this script some
+	#months ago were due to DATES in February and when TIMES are not
+	#identical in both DATES. I only tested  January and February
+	#as DATE1.. I should try and check if March and April (as DATE1)
+	#generate as many errors as February (maybe up to 4%) or are less
+	#problematic as January (less than 1% error rate)...
 
 
 	#set weeks and days
@@ -551,7 +561,6 @@ mainf()
 	#following is required for single unit range calculation
 	#calculate time ranges by single units, if bc is available
 	if
-		#range_single_y=$(bc <<<"scale=$SCL; $range / ($date1_year_days_adj * 3600 * 24)" )
 		range_single_y=$(bc <<<"scale=$SCL; $years_between +( ($range - (($daycount_between_years + $daycount_between_leap_years) * 3600 * 24) ) / ($date1_year_days_adj * 3600 * 24) )" )
 	then
 		range_single_mo=$(bc <<<"scale=$SCL; $monthcount + ( ( ($d_left_save * 3600 * 24) + ($h * 3600) + ($m * 60) + $s) / ($date1_month_max_day * 3600 * 24) )" )
@@ -574,7 +583,10 @@ mainf()
 	#set printing array with shell results
 	sh=("$y" "$mo" "$w" "$d"  "$h" "$m" "$s")
 	
-	#debug
+	#DEBUG
+	#Check output of calculated `compound time range' against `datediff'.
+	#Date ranges (in seconds) are calculated in two ways and checked against each other.
+	#We can also check if results for the `single unit time ranges' match against `datediff'.
 	if ((DEBUG))
 	then
 		date1_iso8601="${date1_iso8601:-$1}"  date2_iso8601="${date2_iso8601:-$2}"
@@ -593,7 +605,7 @@ mainf()
 			#check DATE against `datediff'
 			#[[ "$shs" = "$dds" ]] ||
 			[[ "${sh[*]}" = "${dd[*]}" ]] ||
-			[[ "${dd[@]:2:2}" = *[6-9]\ +([0-9]) ]]    #datediff bad(?) date ranges
+			[[ "${dd[@]:2:2}" = *[6-9]\ +([0-9]) ]]    #datediff ?bad date ranges?
 		} ||
 		{
 			ret=${ret:-1}
@@ -604,7 +616,7 @@ mainf()
 		((DEBUG>1)) && return $ret
 	fi
 
-	#to-do: reswap dates and add negative sign to ranges if $neg_sign is set?
+	#suggestion: reswap dates and add negative sign to ranges if $neg_sign is set?
 	
 	#print results
 	printf 'DATES\n%s  %s\n%s  %s\n' "${date1_iso8601_tz:-${date1_iso8601:-$1}}" "${unix1_tz:-$unix1}" "${date2_iso8601_tz:-${date2_iso8601:-$2}}" "${unix2_tz:-$unix2}"
