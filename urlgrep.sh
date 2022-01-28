@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # urlgrep.sh -- grep full-text urls
-# v0.21.1  jan/2022  by mountaineerbr
+# v0.21.2  jan/2022  by mountaineerbr
 
 # Pipe URLs via stdin. Grep takes all positional arguments.
 
@@ -150,12 +150,18 @@ WARRANTY
 		bc1qlxm5dfjl58whg6tvtszg5pfna9mn2cr2nulnjr
 
 USAGE EXAMPLES
-	I.  Cat URL file and pipe to $SN to run grep on those URLs.
+	I.   Grep a single URL full text.
+
+		$ echo www.example.com | $SN --color=always illustrative
+
+
+	II.  Cat URL file and pipe to $SN to run grep on those URLs.
 
 		$ cat urlList.txt | $SN -i -e linux
 	
-	II. Run shell funtion to generate a list of history URLs from
-	    Firefox and grep them.
+
+	III. Run shell funtion to generate a list of history URLs from
+	     Firefox and grep them.
 
 		$ faurls | $SN -C2 -E -e 'forgotten reference' -e 'important stuff'
 
