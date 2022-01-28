@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # urlgrep.sh -- grep full-text urls
-# v0.21  jan/2022  by mountaineerbr
+# v0.21.1  jan/2022  by mountaineerbr
 
 # Pipe URLs via stdin. Grep takes all positional arguments.
 
@@ -64,33 +64,17 @@ URL LISTS
 		Menu > Bookmarks > Bookmark Manager
 		Menu > History > History
 		chrome://history
-	
-
-	COMMAND LINE
-
-	Close webbrowsers before reading \`.sqlite' databases or make a 
-	temporary copy of the database file. Paths must be adjusted to
-	the actual user name and database.
-
-	Firefox 
-		$ echo 'select url from moz_bookmarks, moz_places where moz_places.id=moz_bookmarks.fk;' | sqlite3 ~/.mozilla/firefox/*.default/places.sqlite
-			
-		$ echo 'select url from moz_places where 1;' | sqlite3 ~/.mozilla/firefox/*.default/places.sqlite
-
-
-	Chrome
-		$ cat ~/.config/google-chrome/Default/Bookmarks | jq -r '..|.url? // empty'
-		
-		$ echo 'select url from urls where 1;' | sqlite3 ~/.config/google-chrome/Default/History
 
 
 	SHELL FUNCTIONS
 	
-	Below are some useful shell functions to get a URL list from
-	mozilla firefox and google chrome. Set paths to webbrowser
-	databases appropriately.
+	Below are some useful shell functions to generate URL lists from
+	Mozilla Firefox and Google Chrome.
 
-	The following functions require jq and sqlite3.
+	Webbrowsers must be closed or a copy of the \`.sqlite' databases
+	must be made and used. Set paths to webbrowser databases appro-
+	priately. The following functions require \`jq' and \`sqlite3'
+	packages.
 
 
 # ~/.bashrc
@@ -136,7 +120,7 @@ cburls() {
 alias ugrep='faurls | tac | $SN --color=always'
 
 
-CONCEPT
+PROOF OF CONCEPT
 	The current shell script can be summarised in its simplest form
 	in the following function:
 
