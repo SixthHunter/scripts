@@ -17,7 +17,7 @@ ___cgk.sh___ | <Coinggecko.com> public api, convert one crypto, bank/fiat or met
 __cmc.sh__ |  <Coinmarketcap.com> convert any amount of one crypto, bank/fiat currency or metal into any another, NON-public api access
 __conkykiller.sh__ | Start/restart conkies regularly to deal with terrible IO ops memory leaks
 __ctemp.sh__ | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
-__ddate.sh__ | Calculate time ranges in different units, `datediff`-like with shell tools (experimental)
+__ddate.sh__ | Calculate time ranges in different units, `datediff`-like written with shell tools (experimental)
 __faster_sh.txt__ | Tips for improving script performances, specific for some use cases, text document
 __grep.sh__ |  Grep files with shell built-ins
 __hgbrasil.sh__ | Bovespa and tax rates. Cotações de ações da Bovespa e índices e taxas (CDI e SELIC) do api da hg brasil
