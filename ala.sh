@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.15.8  nov/2021  by castaway
+# v0.15.9  jan/2022  by castaway
 
 #defaults
 #script name
@@ -112,7 +112,8 @@ SYNOPSIS
 	Option -l updates disc cache data and can be set with all options
 	that fetch data. This avoids flooding the server with \`mostly'
 	static data requests (however special repos change often). Note
-	that directory /tmp is cleared on every boot, cache dir=$CACHEDIR .
+	cached data is updated automatically if older than 24 hours, cache
+	dir=$CACHEDIR .
 
 	The oficial <archive.archlinux.org> archive was started at end
 	of august 2013.
@@ -331,7 +332,7 @@ OPTIONS
 	-3 	   Set custom mirror server (see environment \$MURL).
 	-d 	   Disable auto correction, auto complete and date translation.
 	-h 	   Show this help page.
-	-l 	   Update disc cache file.
+	-l 	   Update disc cache file immediately.
 	-p 	   Disambiguation if first pos arg is \`PKGNAME', not \`DATE'.
 	-v 	   Show script version.
 	Extra Functions
@@ -374,9 +375,11 @@ cachef()
 	3) app=("${YOURAPP3[@]}") ;;
 	esac
 	
-	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]]
+	if [[ ! -s "$fpath" || "$OPTL" -gt 0 || $(find "$fpath" -mtime +1) ]]
 	then 	"${app[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
-		grep -qi '404 Not Found' "$fpath" && { rm -- "$fpath" 2>/dev/null ;ret=1 ;}
+		grep --color=always -qi -e '404 Not Found' "$fpath" && {
+			rm -- "$fpath" 2>/dev/null ;ret=1
+		}
 	else 	cat -- "$fpath" ;ret=$?
 		echo "CACHE: <$fpath>" >&2
 	fi
