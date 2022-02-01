@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.19  jan/2022  by mountaineerbr
+# v0.19.1  feb/2022  by mountaineerbr
 
 #padrões
 
@@ -854,7 +854,7 @@ fi
 
 #selecionar opção
 if ((OPTL))
-then 	selectf "$@" | less -b-1
+then 	selectf "$@" | less -B -b4096
 else 	selectf "$@"
 fi
 exit $RET
