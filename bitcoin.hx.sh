@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v0.9.2  oct/2021  by castaway
+# v0.9.3  feb/2022  by castaway
 # create base58 address types from public key,
 # create WIF from private keys and more
 # requires Bash v4+
@@ -66,9 +66,9 @@ DESCRIPTION
 	set it as FILE.
 
 	Only legacy type addresses (P2PKH) are generally supported throughout
-	this script (addresses starting with 1). Segwit addresses (P2SH,
-	starting with 3) may not be validated with option -c. Native segwit
-	(bech32, starting with bc1) addresses will throw errors.
+	this script (addresses starting with 1). Option -c may not validate
+	segwit addresses (P2SH,	starting with 3). Native segwit (bech32,
+	starting with bc1) addresses will throw errors.
 
 	This script warps around Grondilu's bitcoin-bash-tools functions.
 	The script has got many original functions, too.
@@ -96,8 +96,8 @@ DESCRIPTION
 
 	Set -P to generate public addresses from input. Input must be TEXT
 	STRING, HEX (must start with 0X, else set -b), SHA256, WIF or FILE
-	name (autodetect). If input is HASH160, set -a. This function be
-	used as brain wallet generator.
+	name (autodetect). If input is HASH160, set -a. This function can
+	be used as brain wallet generator.
 
 	Option -x checks checksum of WIF key.
 
@@ -209,7 +209,7 @@ WARRANTY
 
 
 USAGE EXAMPLES
-	1) Generate public address from public address BYTE HEX (defaults
+	1) Generate public address from public key BYTE HEX (defaults
 	function):
 
 		$ $SN 0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee
@@ -276,27 +276,27 @@ USAGE EXAMPLES
 
 
 OPTIONS
-	Public Keys (Defaults)
+	Public Keys (defaults main function)
 	Generate public address from public address BYTE HEX.
-	-a 	Set input as HASH160 (affects main function and -P)
+	-a 	Set/flag input as HASH160 (affects main function and -P)
 	
 	Private Keys
 	-p	Generate Wallet Import Format (WIF) from input private key.
 	-pp 	Generate compressed WIF from private key.
-	-P 	Generate public address from private key or WIF (see -a).
+	-P 	Generate public address from private key or WIF (see -ab).
 	-x 	Check WIF checksum.
 	-w	Generate private key from (un)compresssed WIF.
 	
 	Decode and Encode BASE58
 	-b 	Flag input as BYTE HEX (with -26ppPY).
 	-y	Decode BASE58-encoded STRING or FILE to text.
-	-Y	Encode STRING, FILE or BYTE HEX to BASE58 (see -t).
+	-Y	Encode STRING, FILE or BYTE HEX to BASE58.
 
 	Misc
 	-1 	Print HASH160 of public or private base58 address.
 	-2 	Generate double SHA256 sum from STRING, FILE or BYTE HEX.
 	-6 	Generate HASH160 from any STRING, FILE or BYTE HEX.
-	-c 	Check public or private base58 address checksum (validation).
+	-c 	Validate public or private base58 address (check checksum).
 	-e 	Verbose.
 	-h 	This help page.
 	-v NUM 	Set version byte, defaults=${VERDEF} (public keys)
