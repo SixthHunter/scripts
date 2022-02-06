@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.13  nov/2021  by mountaineerbr
+# v0.14.14  feb/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -392,24 +392,22 @@ calcf()
 
 	#zshell
 	if ((ZSH_VERSION))
-	then
-		#mathfunc module
+	then 	#mathfunc module
 		((OPTE)) && zmodload zsh/mathfunc
 		#set float numbers and scale
 		setopt LOCAL_OPTIONS FORCE_FLOAT
 		typeset -F "${OPTS:-$BCSCALE}" eq
 		print "$eq"
 	#bc
-	else
-		if ((OPTE))
+	else 	if ((OPTE))
 		then
 			#set mathlib and extensions file
 			if [[ -e "$BCEXTFILE" ]]
-			then set -- -l "$BCEXTFILE"
+			then 	set -- -l "$BCEXTFILE"
 			#mathlib only
-			else set -- -l ;((OPTV)) && echo "warning: bc mathlib only" >&2
+			else 	set -- -l ;((OPTV)) && echo "warning: bc mathlib only" >&2
 			fi
-		else set --
+		else 	set --
 		fi
 		bc "$@" <<<"$bceq"
 	fi
@@ -433,11 +431,11 @@ opteef()
 {
 	#does bc extension file exist?
 	if [[ -e "$BCEXTFILE" ]]
-	then cat -- "$BCEXTFILE"
+	then 	cat -- "$BCEXTFILE"
 	#check whether zsh is running
 	elif ((ZSH_VERSION))
-	then print "$SN: warning: zsh -- check zsh/mathfunc" >&2 ;return 1
-	else echo "$SN: err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
+	then 	print "$SN: warning: zsh -- check zsh/mathfunc" >&2 ;return 1
+	else 	echo "$SN: err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
 	fi
 }
 
@@ -448,25 +446,24 @@ precff()
 	((${1:-0})) && lines="$1"
 	#edit record file
 	if ((OPTP<0))
-	then command "${VISUAL:-${EDITOR:-vi}}" -- "$BCRECFILE"
+	then 	command "${VISUAL:-${EDITOR:-vi}}" -- "$BCRECFILE"
 	#generate record file table
 	elif ((OPTP==1))
 	then 	((${2:-0}>10 && ${2:-600}<600)) && truncate="$2"
 		nl -ba -- "$BCRECFILE" | tail -n"${lines:-10}" \
 		| sed -r -e "s/([^\t]{0,${truncate:-40}})[^\t]*/\1/g" -e 's/^(([^\t]*\t){2})([^\t]*)\t/\1{ \3 }\t/' \
-		| if command column --help &>/dev/null ;then column -ets$'\t' -NINDEX,RESULT,EXPRESSION,DATE,NOTE ;else column -ts$'\t' ;fi \
+		| if command column --help &>/dev/null ;then 	column -ets$'\t' -NINDEX,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
 		| less -S
 	#print entire record file
 	elif ((OPTP))
-	then nl -ba -- "$BCRECFILE"
+	then 	nl -ba -- "$BCRECFILE"
 	fi
 }
 
 
 #parse options
 while getopts ,.0123456789efhlnorRtvVz- opt
-do
-	case $opt in
+do 	case $opt in
 		#change input/output decimal separator
 		,) 	OPTDEC=${OPTDEC:0:1}, ;;
 		#change input/output decimal separator
@@ -475,10 +472,9 @@ do
 		[0-9]) 	OPTS="$OPTS$opt" ;;
 		-) 	OPTS= ;;
 		#load or print bc extensions
-		e|l)
-			if ((OPTE))
-			then opteef ;exit
-			else ((++OPTE))
+		e|l) 	if ((OPTE))
+			then 	opteef ;exit
+			else 	((++OPTE))
 			fi ;;
 		#disable use record file
 		f) 	unset BCRECFILE ;;
@@ -495,14 +491,12 @@ do
 		#verbose
 		v) 	((++OPTV)) ;;
 		#print script version
-		V)
-			echo "${ZSH_VERSION:-BASH}  ${BASH_VERSION:-ZSH}" 
+		V) 	echo "${ZSH_VERSION:-BASH}  ${BASH_VERSION:-ZSH}" 
 			grep -m1 '^\# v' "$0"
 			exit ;;
 		#try to run script with zsh
-		z)
-			if ((! ZSH_VERSION))
-			then env zsh "$0" "$@" ;exit
+		z) 	if ((! ZSH_VERSION))
+			then 	env zsh "$0" "$@" ;exit
 			fi ;;
 		#illegal option
 		\?) 	exit 1 ;;
@@ -521,10 +515,10 @@ then
 	#opt fun
 	#add note to record
 	if ((OPTN))
-	then notef "$*" ;exit
+	then 	notef "$*" ;exit
 	#print or edit record file
 	elif ((OPTP))
-	then precff "$@" ;exit
+	then 	precff "$@" ;exit
 	fi
 	
 	#get last result index
@@ -545,15 +539,15 @@ then
 	done
 	unset subeq eqvar eqind aright aleft recvar
 elif ((OPTN+OPTP))
-then echo "$SN: err -- record file not available" >&2 ;exit 1
+then 	echo "$SN: err -- record file not available" >&2 ;exit 1
 fi
 
 #-. dot is input decimal separator
 if [[ "$OPTDEC" = .* ]]
-then EQ="${EQ//,}"
+then 	EQ="${EQ//,}"
 #-, comma is input decimal separator
 elif [[ "$OPTDEC" = ,* ]]
-then EQ="${EQ//.}" EQ="${EQ//,/.}"
+then 	EQ="${EQ//.}" EQ="${EQ//,/.}"
 fi
 
 #checks
@@ -566,7 +560,7 @@ if [[
 	"$EQ" =~ [0-9]*[.][0-9]*[,][0-9]*[.] ||
 	"$EQ" =~ [0-9]*[,][0-9]*[.][0-9]*[,] 
 ]]
-then echo "warning: excess of decimal separators  -- $EQ" >&2
+then 	echo "warning: excess of decimal separators  -- $EQ" >&2
 fi
 
 #calculate expression result
@@ -580,26 +574,25 @@ recordout="$RES	$EQ	$timestamp	"
 if [[ -e "$BCRECFILE" ]]
 then
 	IFS=$'\t' read -r lastres lasteq lastdate lastnote < <(tail -1 "$BCRECFILE") 
-	if [[ ( "$RES" != "$lastres" || "$EQ" != "$lasteq" ) && "$SIMPLEVAREQ" -eq 0 ]]
-	then echo "$recordout" >>"$BCRECFILE" ;LASTIND=$((LASTIND+1))
+	if [[ ( "$RES" != "$lastres" || "${EQ//[$IFS]/}" != "${lasteq//[$IFS]/}" ) && "$SIMPLEVAREQ" -eq 0 ]]
+	then 	echo "$recordout" >>"$BCRECFILE" ;LASTIND=$((LASTIND+1))
 	fi
 elif [[ "$BCRECFILE" ]]  #init tsv
-then echo "$recordout" >>"$BCRECFILE"
+then 	echo "$recordout" >>"$BCRECFILE"
 fi
 unset recordout lastres lasteq lastdate lastnote timestamp
 
 #format and print result
 #add thousand separator if opt -t is set
 if ((OPTT))
-then RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
+then 	RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
 #trim trailing zeroes, skip if any opt -ce is set
 elif [[ -z "$OPTE$OPTS" ]]
-then
-	#bc hack
+then 	#bc hack
 	if [[ "$BASH_VERSION" ]]
-	then RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")
+	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")
 	#zsh
-	else [[ "$RES" =~ [.]{,1}0{1,}$ ]] && RES="${RES%$MATCH}"
+	else 	[[ "$RES" =~ [.]{,1}0{1,}$ ]] && RES="${RES%$MATCH}"
 	fi
 fi
 
@@ -608,6 +601,6 @@ fi
 
 #swap output decimal and thousands delimiters?
 if [[ "$OPTDEC" = ?, ]]
-then tr ., ,. <<<"$RES"
-else echo "$RES"
+then 	tr ., ,. <<<"$RES"
+else 	echo "$RES"
 fi
