@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.19.1  feb/2022  by mountaineerbr
+# v0.19.2  feb/2022  by mountaineerbr
 
 #padrões
 
@@ -143,18 +143,21 @@ GARANTIA E REQUISITOS
 
 
 NOTAS E BUGS
+	Encanar a saída para um paginador como o \`Less' manualmente ou
+	ativando a opção -l do script em conjunto com a opção \`-r', buff-
+	eres do sistema não irá permitir que o script rode continuamente.
+	Para deixar o script rodando por tempo indefinido com a opção \`-r',
+	redirecione a saída para um arquivo.
+
 	Observe que se uma nova notícia for publicada durante o funciona-
 	mento do programa ao baixar múltiplas páginas contíguas, irá
 	perder-se algum número de reportagens pois elas são rolantes.
 
-	Quando se usa a opção -a , alguns artigos mais recentes (da pri-
+	Quando se usa a opção -a, alguns artigos mais recentes (da pri-
 	meira e segunda página iniciais) podem estar faltantes. Os ser-
 	vidores alternativos podem demorar um pouco para sincronizarem
 	com o servidor padrão.
 	
-	Não sendo um erro do script, artigos podem aparecer em duplicata
-	devido ao próprio design do site.
-
 	Wget 1.21.2 imprime mensagens de \`SSL_INIT' espúrias em stderr,
 	consertado na versão seguinte.
 
@@ -187,7 +190,7 @@ EXEMPLOS DE USO
 
 		$ anta.sh -fr | less
 
-		$ anta.sh -frl
+		$ anta.sh -fr >anta.txt ;tail anta.txt
 
 
 	( 4 ) Textos completos dos artigos das primeiras 4 páginas
@@ -235,7 +238,7 @@ OPÇÕES
 	-f [ÍNDICE..|URL..]
 		  Texto integral dos artigos das páginas iniciais.
 	-h 	  Mostra esta ajuda.
-	-l 	  Encanar saída para o paginador Less.
+	-l 	  Encanar saída para o paginador Less (nota na seção de bugs).
 	-p NUM    Número de páginas a serem puxadas; padrão=1 .
 	-r 	  Reacessar a página inicial em intervalos de tempo.
 	-s NUM    Intervalo de tempo entre reacessos da opção -r ; 

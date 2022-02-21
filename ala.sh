@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.15.9  jan/2022  by castaway
+# v0.15.10  feb/2022  by castaway
 
 #defaults
 #script name
@@ -850,7 +850,7 @@ pagepf() {
 	SIGPKGS=$(grep -Ec '\.pkg\.tar\.(gz|xz|zst)\.sig"' <<<"$LIST")
 
 	#print
-	echo "$BUFFER" | sort -V
+	echo "$BUFFER" | sort -V | grep -v \.sig
 	[[ "$PKGS$SIGPKGS" != 00 ]] &&
 		printf 'Pkgs: %d  Sigs: %d\n' "$PKGS" "$SIGPKGS"
 	printf '<%s>\n' "$URLADD"
