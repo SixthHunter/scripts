@@ -316,7 +316,7 @@ mainf()
 			|| ( (yearA==yearB) && (monthA==monthB) && (dayA==dayB) && (hourA==hourB) && (minA>minB) )
 			|| ( (yearA==yearB) && (monthA==monthB) && (dayA==dayB) && (hourA==hourB) && (minA==minB) && (secA>secB) )
 		))
-		#check date sorting, this should not work properly with negative years: (( ( (yearB*366*24*60*60)+(monthB*31*24*60*60)+(dayB*24*60*60)+(hourB*60*60)+(minB*60)+secB) >= ((yearA*366*24*60*60)+(monthA*31*24*60*60)+(dayA*24*60*60)+(hourA*60*60)+(minA*60)+secA) ))
+		#date sorting check, does not work properly with negative years: (( ( (yearB*366*24*60*60)+(monthB*31*24*60*60)+(dayB*24*60*60)+(hourB*60*60)+(minB*60)+secB) >= ((yearA*366*24*60*60)+(monthA*31*24*60*60)+(dayA*24*60*60)+(hourA*60*60)+(minA*60)+secA) ))
 	then
 		#swap dates
 		neg_sign=-
@@ -333,7 +333,6 @@ mainf()
 
 
 	##Count leap years and sum leap and non leap years days,
-	##needs to add a condition in the for test when yearA==yearB!
 	for ((y_test=(yearA+1);y_test<yearB;++y_test))
 	do 	(( !(y_test % 4) && (y_test % 100 || !(y_test % 400) ) )) && ((++leapcount))
 		((++years_between))
@@ -394,8 +393,7 @@ mainf()
 		((d_left = (dayB - dayA) ))
 		((d_left_save = d_left))
 	elif ((dayA>dayB))
-	then
-		#true refinement rules
+	then 	#true refinement rules
 		((d_left = ( (date3_month_max_day>=dayA) ? (date3_month_max_day-dayA) : (date1_month_max_day-dayA) ) + dayB ))
 		((d_left_save = (date1_month_max_day-dayA) + dayB ))
 		if ((date3_month_max_day<date1_month_max_day && (dayB>dayA || (dayA>date3_month_max_day && dayB>1) ) ))
@@ -411,8 +409,7 @@ mainf()
 				fi
 			fi
 		elif ((date3_month_max_day<dayA))
-		then 
-			if ((mo))
+		then  	if ((mo))
 			then 	((--mo))
 			elif ((y))
 			then  	((--y , mo+=11))
@@ -420,8 +417,7 @@ mainf()
 			((d_left = (date1_month_max_day - dayA + date3_month_max_day + dayB) ))
 			((w = d_left/7 , d_left%=7))
 		fi
-	else
-		#`dayA' equals `dayB'
+	else 	#`dayA' equals `dayB'
 		((++mo))
 		((fullmonth_days += date1_month_max_day))
 		#((d_left_save = d_left))  #set to 0
@@ -487,10 +483,10 @@ mainf()
 
 
 	#total sum of full days
-	((d_sum = (  (d_left_save) + (fullmonth_days + daycount_years + daycount_leap_years)  ) ))
 	#if [[ $unix2 ]]  #prefer `date' unix times for range if available?
 	#then 	((range = unix2-unix1))
 	#else
+		((d_sum = (  (d_left_save) + (fullmonth_days + daycount_years + daycount_leap_years)  ) ))
 		((range = (d_sum * 3600 * 24) + (h * 3600) + (m * 60) + s))
 	#fi
 
