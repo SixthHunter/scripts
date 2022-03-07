@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.5  mar/2022  mountaineerbr  GPLv3+
+# v0.16.6  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -91,6 +91,7 @@ SEE ALSO
 EXAMPLES
 	Leap year check
 	$ ${0##*/} -l 2000
+	$ echo 2000 | ${0##*/} -l
 
 	\`GNU date' wrapping
 	$ ${0##*/} 'next monday'
@@ -104,12 +105,15 @@ EXAMPLES
 	$ ${0##*/} -2 -- today00:00 '12 May 2020 14:50:50' w
 	$ ${0##*/} '2020-01-01 - 6months' 2020-01-01  months
 	$ ${0##*/} '05 jan 2005' 'now - 43years -13 days' y
+	$ ${0##*/} @1561243015 @1592865415
 
 	\`BSD date' wrapping
 	$ ${0##*/} 2020-01-03T14:30:10 2020-12-24T00:00:00
 	$ ${0##*/} 0021-04-12 1999-01-31
 	$ ${0##*/} -f'%m/%d/%Y' 6/28/2019 1Aug
-	$ ${0##*/} @1561243015 @1592865415
+	$ ${0##*/} 200002280910.33 0003290010.00
+	$ ${0##*/} -r 1561243015 1592865415
+	$ echo 1970-01-01 2000-02-02 | ${0##*/} 
 
 
 OPTIONS
@@ -148,16 +152,12 @@ TIME_ISO8601_FMT='%Y-%m-%dT%H:%M:%S%z'
 #`BSD date' input time format defaults
 INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S
 
-#custom `date' command, is BSD-like date?
-#DATE_CMD=( )  BSDDATE=0
-#
 # datefun vars
 # Choose between GNU or BSD date
 # datefun.sh [-u|-R|-v[val]|-I[fmt]] [YYY-MM-DD|@UNIX] [+OUTPUT_FORMAT]
 # datefun.sh [-u|-R|-v[val]|-I[fmt]]
 #
-# By defaults, input should be UNIX time (append @) or ISO8601 format
-# because of BSD date (or set $INPUT_FMT).
+# By defaults, input should be UNIX time (append @) or ISO8601 format.
 # Relative times are not supported, such as `-1d' and `last week'.
 # Option -I `fmt' may be `date', `hours', `minutes' or `seconds'.
 # Setting environment TZ=UTC0 is equivalent to -u. 
@@ -329,7 +329,7 @@ mainf()
 	fi
 	#check input validity
 	[[ "${yearA:?user input required}" && "${yearB:?user input required}" && "$yearA$dayA$yearB$dayB" = +([0-9 +-]) ]] || return 2
-	((monthA>12 || monthB>12 || hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60 || (dayA>$(month_maxday $monthA $yearA) ) || (dayB>$(month_maxday $monthB $yearB) ) )) && { echo "err: illegal user input" >&2 ;return 2 ;}
+	{ ((monthA>12 || monthB>12 || hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60 || (dayA>$(month_maxday $monthA $yearA) ) || (dayB>$(month_maxday $monthB $yearB) ) )) ;} 2>/dev/null && { echo "err: illegal user input" >&2 ;return 2 ;}
 
 
 	##Count leap years and sum leap and non leap years days,
@@ -545,7 +545,7 @@ mainf()
 	return ${ret:-0}
 }
 
-#check if floating number input is plural, return signal and var SS to ``s''.
+#check if floating number input is plural, return signal and set $SS to ``s''.
 pRHelper()
 {
 	local val valx int dec
