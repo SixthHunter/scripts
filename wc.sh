@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # wc.sh  --  print line, word and character count
-# v0.5.3  oct/2021  by mountaineerbr
+# v0.5.4  mar/2022  by mountaineerbr
 
 #defaults
 #script name
@@ -105,7 +105,7 @@ do
 			done <"$0"
 			;;
 		#run this script with zshell
-		z) (( ZSH_VERSION )) || { zsh "$0" "$@" ;exit ;} ;;
+		z) [[ $ZSH_VERSION ]] || { zsh "$0" "$@" ;exit ;} ;;
 		#illegal option
 		?) exit 1 ;;
 	esac
@@ -134,7 +134,7 @@ then (( ++OPTC )) ;(( ++OPTL )) ;(( ++OPTW ))
 fi
 
 #bash or zsh?
-if (( ZSH_VERSION ))
+if [[ $ZSH_VERSION ]]
 then
 	#set automatic word split
 	#array index start at nought

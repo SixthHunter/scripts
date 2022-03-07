@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.14  feb/2022  by mountaineerbr
+# v0.14.16  mar/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -65,28 +65,29 @@ DESCRIPTION
 	cally depending on user input. However note that \`3' is an integer
 	while \`3.' is a floating point number. Zsh keeps an internal double-
 	precision floating point representation (double C type) of numbers,
-	hence expression \`3/4' evaluates to \`.75' rather than \`0'. However,
-	in this script FORCE_FLOAT is set by defaults, just note that results
-	will be converted back to the closest decimal notation from the in-
-	ternal double-point.
+	and expression \`3/4' evaluates to \`.75' rather than \`0'. Note that
+	in this script FORCE_FLOAT is set by defaults and that results will
+	be converted back to the closest decimal notation from the internal
+	double-point.
 
 	Option -n adds notes to record file entries. If the first positional
 	argument after this option is an INDEX number, adds note to that
 	entry, otherwise adds to the last record entry.
 
 	Option -e loads bc mathlib and extension file or zshell mathfunc
-	module. Set bc extensions file path in script head source code.
+	module. Set bc extensions file path in script head source code
+	or as an environmental variable path.
 
 	Trailing zeroes will be trimmed unless extension option -e is set,
 	in which case result is printed in raw format.
 
 
 DECIMAL SEPARATOR AND THOUSANDS GROUPING
-	Bc and Zshell maths only accept dot (.) as input decimal sepa-
-	rator and that is defaults. Set option \`-.' for dot (.) as input
-	decimal separator (and removal of all commas) or \`-,' to set it as
-	(,) comma intead (and removal all dots). Beware that some bc
-	and zsh functions may use comma as operators.
+	Bc and Zshell maths only accept dot (.) as input decimal separator
+	(defaults). Set option \`-.' for dot (.) as input decimal separator
+	(and removal of all commas) or \`-,' to set it as comma (,) instead
+	(and removal all dots). Beware that some bc and zsh functions may
+	use comma as operator.
 
 	Setting \`-..' means input and output decimal separators should be
 	dots (.). Rather, setting \`-.,' means input decimal separator is
@@ -391,7 +392,7 @@ calcf()
 	[[ "${eq// }" ]] || return
 
 	#zshell
-	if ((ZSH_VERSION))
+	if [[ $ZSH_VERSION ]]
 	then 	#mathfunc module
 		((OPTE)) && zmodload zsh/mathfunc
 		#set float numbers and scale
@@ -433,7 +434,7 @@ opteef()
 	if [[ -e "$BCEXTFILE" ]]
 	then 	cat -- "$BCEXTFILE"
 	#check whether zsh is running
-	elif ((ZSH_VERSION))
+	elif [[ $ZSH_VERSION ]]
 	then 	print "$SN: warning: zsh -- check zsh/mathfunc" >&2 ;return 1
 	else 	echo "$SN: err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
 	fi
@@ -495,7 +496,7 @@ do 	case $opt in
 			grep -m1 '^\# v' "$0"
 			exit ;;
 		#try to run script with zsh
-		z) 	if ((! ZSH_VERSION))
+		z) 	if [[ -z $ZSH_VERSION ]]
 			then 	env zsh "$0" "$@" ;exit
 			fi ;;
 		#illegal option

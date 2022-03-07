@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # grep.sh  --  grep with shell built-ins
-# v0.4.6  oct/2021  by mountaineerbr
+# v0.4.7  mar/2022  by mountaineerbr
 
 #defaults
 #script name
@@ -450,7 +450,7 @@ do
 		#whole word match
 		w) OPTW=1 ;;
 		#try to change interpreter to zsh
-		z) ((ZSH_VERSION)) || { zsh "$0" "$@" ;exit ;} ;;
+		z) [[ $ZSH_VERSION ]] || { zsh "$0" "$@" ;exit ;} ;;
 		#illegal option
 		?) exit 1 ;;
 	esac
@@ -459,7 +459,7 @@ shift $((OPTIND - 1))
 unset c
 
 #shell options
-if ((ZSH_VERSION))
+if [[ $ZSH_VERSION ]]
 then
 	#set zsh opts
 	setopt GLOBSUBST EXTENDED_GLOB ${OPTAT+KSH_GLOB} ${OPTP+RE_MATCH_PCRE} ${OPTI+NOCASE_MATCH}
@@ -683,7 +683,7 @@ do
 						[[ "$linexl" = "$linep" ]] && unset linexl
 						[[ "$linexr" != "$linexl" ]]
 					then
-						if ((ZSH_VERSION))
+						if [[ $ZSH_VERSION ]]
 						then
 							#zsh escaping
 							#one or more matches?
