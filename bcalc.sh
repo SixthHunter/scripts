@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.16  mar/2022  by mountaineerbr
+# v0.14.17  mar/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -324,8 +324,6 @@ USAGE EXAMPLES
 
 		
 	(III) Setting scale to two decimal plates
-
-		$ $SN -s2 1/3
 
 		$ $SN -2 1/3
 		
