@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.11  mar/2022  mountaineerbr  GPLv3+
+# v0.16.12  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -205,11 +205,11 @@ datefun()
 		elif [[ $1 = +([0-9])-+([0-9])-+([0-9]) && ! $OPTF ]]  #try short ISO8601 (no time)
 		then 	"${DATE_CMD[@]}" ${options} -j -f "${TIME_ISO8601_FMT:0:8}" "$@" && return
 		fi
-		[[ ${1:-+} != @(+|@|-f)* ]] && set -- -f"${input_fmt}" "$@"
+		[[ ${1:-+%} != @(+%|@|-f)* ]] && set -- -f"${input_fmt}" "$@"
 		[[ $1 = @* ]] && set -- "-r${1#@}" "${@:2}"
 		"${DATE_CMD[@]}" ${options} -j "$@"
 	else
-		[[ ${1:-+} != @(+|-d)* ]] && set -- -d"${unix_input}${1}" "${@:2}"
+		[[ ${1:-+%} != @(+%|-d)* ]] && set -- -d"${unix_input}${1}" "${@:2}"
 		"${DATE_CMD[@]}" ${options} "$@"
 	fi
 }
@@ -507,8 +507,8 @@ mainf()
 	#fi
 
 	#single unit time ranges when `bc' is available (ensure `bc' is available)
-	if { 	((!OPTT||OPTTy)) && range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
-		} || ((OPTT||OPTVERBOSE<3))
+	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) && range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
+		} || ((OPTT))
 	then
 		((!OPTT||OPTTmo)) && range_single_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
 		((!OPTT||OPTTw)) && range_single_w=$(bc <<<"scale=${SCL}; ${range:-0} / 604800")
