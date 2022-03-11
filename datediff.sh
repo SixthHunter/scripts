@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.9  mar/2022  mountaineerbr  GPLv3+
+# v0.16.10  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -228,7 +228,8 @@ fi >/dev/null 2>&1
 #usage: month_maxday [MONTH] [YEAR]
 month_maxday()
 {
-	local month="$1" year="$2"
+	local month year
+	month="$1" year="$2"
 	if (( month == 2 && !(year % 4) && ( year % 100 || !(year % 400) ) ))
 	then 	echo 29
 	else 	echo ${YEAR_MONTH_DAYS[month-1]}
@@ -238,7 +239,8 @@ month_maxday()
 #check how many days in a year; print number of days of a year.
 #year_days()
 #{
-#	local month="$1" year="$2"
+#	local month year
+# 	month="$1" year="$2"
 #	if (( !(year % 4) && ( year % 100 || !(year % 400) ) ))
 #	then 	echo 366
 #	else 	echo 365 ;false
@@ -248,7 +250,8 @@ month_maxday()
 #year days, leap years only if date1's month is before or at feb.
 year_days_adj()
 {
-	local month="$1" year="$2"
+	local month year
+	month="$1" year="$2"
 	if (( month <= 2 && !(year % 4) && ( year % 100 || !(year % 400) ) ))
 	then 	echo 366
 	else 	echo 365
@@ -258,7 +261,8 @@ year_days_adj()
 #check for leap year
 isleap()
 {
-	local year=${1#+} year=${year##*(0)}
+	local year
+	year=${1#+} year=${year##*(0)}
 	if 	[[ $year = ?(-)+([0-9]) ]] ||
 		{ 	[[ $year =~ ^-?[0-9]{1,4} ]] && year=${BASH_REMATCH[0]} ;}
 	then
