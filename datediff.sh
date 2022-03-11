@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.10  mar/2022  mountaineerbr  GPLv3+
+# v0.16.11  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -8,7 +8,7 @@ HELP="NAME
 
 
 SYNOPSIS
-	${0##*/} [-NUM] [-RruVVvvv] [-f\"INPUT_FMT\"] \"DATE1\" \"DATE2\" [UNIT]
+	${0##*/} [-NUM] [-RruVVvvv] [-f\"FMT\"] \"DATE1\" \"DATE2\" [UNIT]
 	${0##*/} -l [-v] YEAR
 	${0##*/} -h
 
@@ -177,12 +177,11 @@ OPTIONS
 #interesting case: -- -220-01-03 -0220-01-01
 
 
-#DAYYEAR=146097/400
 YEAR_MONTH_DAYS=(31 28 31 30 31 30 31 31 30 31 30 31)
 TIME_ISO8601_FMT='%Y-%m-%dT%H:%M:%S%z'
 #TIME_RFC5322_FMT='%a, %d %b %Y %H:%M:%S %z'
 #TIME_CUSTOM_FMT='%d/%b/%Y %H:%M:%S'
-#`BSD date' input time format defaults
+#`BSD date' input time format defaults:
 INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S - no timezone
 
 # Choose between GNU or BSD date
@@ -711,7 +710,7 @@ fi
 
 #print a single time unit?
 opt="${@: -1}" opt="${opt,,}"
-if [[ $opt =~ ^(y|mo|w|d|h|m|s)$ ]]
+if [[ ${opt// } =~ ^(y|mo|w|d|h|m|s)$ ]]
 then 	OPTT=1 OPTVERBOSE=2
 	eval "OPTT${BASH_REMATCH[1]}=1"
 	set -- "${@:1:$#-1}"
