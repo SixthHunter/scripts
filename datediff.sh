@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.13  mar/2022  mountaineerbr  GPLv3+
+# v0.16.14  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -342,13 +342,15 @@ mainf()
 		))
 	then 	#swap dates
 		neg_sign=-
+		inputA="${date2_iso8601:-$2}"
+		inputB="${date1_iso8601:-$1}"
 		set -- "$2" "$1" "${@:3}"
 		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 		for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
 		do 	eval "$var=\"${!var##*(0)}\""
 		done
-		[[ $inputB = -* ]] && yearA=-$yearA ;[[ $inputA = -* ]] && yearB=-$yearB
+		[[ $inputA = -* ]] && yearA=-$yearA ;[[ $inputB = -* ]] && yearB=-$yearB
 	fi
 	#check input validity
 	[[ ${yearA:?user input required}${yearB:?user input required} = +([0-9 -]) ]] || return 2
