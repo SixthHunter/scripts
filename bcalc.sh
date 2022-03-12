@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.17  mar/2022  by mountaineerbr
+# v0.14.18  mar/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -417,7 +417,7 @@ notef()
 {
 	local text num
 	text="$*" text="${text//[$'\t\n']/ }"
-	[[ "$text" =~ ^\ *[0-9]+\ * ]]
+	[[ "$text" =~ ^\ *[0-9]+\ * ]] ;[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
 	num="${MATCH:-${BASH_REMATCH[0]}}" text="${text#$num}"
 	[[ "$text" =~ ^\ * ]]
 	sed -i -e "${num:-$} s/ *$/ ${text#${MATCH:-${BASH_REMATCH[0]}}}/ ;${num:-$} s/"$'\t'" */"$'\t'"/g" "$BCRECFILE"
@@ -451,7 +451,7 @@ precff()
 	then 	((${2:-0}>10 && ${2:-600}<600)) && truncate="$2"
 		nl -ba -- "$BCRECFILE" | tail -n"${lines:-10}" \
 		| sed -r -e "s/([^\t]{0,${truncate:-40}})[^\t]*/\1/g" -e 's/^(([^\t]*\t){2})([^\t]*)\t/\1{ \3 }\t/' \
-		| if command column --help &>/dev/null ;then 	column -ets$'\t' -NINDEX,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
+		| if command column --help >/dev/null 2>&1 ;then 	column -ets$'\t' -NINDEX,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
 		| less -S
 	#print entire record file
 	elif ((OPTP))
@@ -494,7 +494,7 @@ do 	case $opt in
 			grep -m1 '^\# v' "$0"
 			exit ;;
 		#try to run script with zsh
-		z) 	if [[ -z $ZSH_VERSION ]]
+		z) 	if [[ ! $ZSH_VERSION ]]
 			then 	env zsh "$0" "$@" ;exit
 			fi ;;
 		#illegal option
@@ -502,6 +502,7 @@ do 	case $opt in
 	esac
 done
 shift $((OPTIND -1))
+[[ $KSH_VERSION ]] && ZSH_VERSION=KSH93
 
 #set equation. is it stdin input? (beware options)
 EQ="$*" ;[[ ! -t 0 && $#+OPTN+OPTP -eq 0 ]] && EQ=$(</dev/stdin)
@@ -524,7 +525,7 @@ then
 	LASTIND=$(wc -l <"$BCRECFILE")
 	#change special variable to corresponding result or retrieve last result if $EQ is empty
 	while [[ "${EQ:=$BCHOLD}" =~ (^|$WORDANCHOR)(${BCHOLD:-@%@%}[0-9]*)($WORDANCHOR|$) ]]
-	do
+	do 	[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
 		subeq="${MATCH:-${BASH_REMATCH[0]}}"
 		eqvar="$subeq" eqvar="${eqvar#$WORDANCHOR}" eqvar="${eqvar%$WORDANCHOR}"
 		eqind="${eqvar//[^0-9]}"
@@ -586,12 +587,15 @@ unset recordout lastres lasteq lastdate lastnote timestamp
 if ((OPTT))
 then 	RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
 #trim trailing zeroes, skip if any opt -ce is set
-elif [[ -z "$OPTE$OPTS" ]]
-then 	#bc hack
-	if [[ "$BASH_VERSION" ]]
-	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")
-	#zsh
-	else 	[[ "$RES" =~ [.]{,1}0{1,}$ ]] && RES="${RES%$MATCH}"
+elif [[ ! "$OPTE$OPTS" ]]
+then 	if [[ "$BASH_VERSION" ]]
+	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")  #bc hack
+	else 	[[ "$ZSH_VERSION" ]] && setopt KSH_GLOB
+		if [[ "$RES" = *[.]*([0-9])[1-9]*([0-9])+([0]) ]]
+		then 	RES="${RES%${RES##*[1-9]}}"
+		elif [[ "$RES" = *[.]+([0]) ]]
+		then 	RES="${RES%.0*}"
+		fi
 	fi
 fi
 
