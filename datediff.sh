@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.12  mar/2022  mountaineerbr  GPLv3+
+# v0.16.13  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -107,7 +107,7 @@ EXAMPLES
 	$ ${0##*/} '10 years ago'  mo                         #(mo)nths
 	$ ${0##*/} 1970-01-01  2000-02-02  y                  #(y)ears
 
-	\`GNU date' wrapping
+	\`GNU date' warping
 	$ ${0##*/} 'next monday'
 	$ ${0##*/} 2019/6/28  1Aug
 	$ ${0##*/} '5min 34seconds'
@@ -120,11 +120,12 @@ EXAMPLES
 	$ ${0##*/} '05 jan 2005' 'now - 43years -13 days'
 	$ ${0##*/} @1561243015 @1592865415
 
-	\`BSD date' wrapping
+	\`BSD date' warping
 	$ ${0##*/} -f'%m/%d/%Y' 6/28/2019  9/04/1970 
 	$ ${0##*/} -r 1561243015 1592865415
 	$ ${0##*/}  200002280910.33  0003290010.00
 	$ ${0##*/} -- '-v +1d' '-v -28d'
+	$ ${0##*/}  2021-12-31T21:00:10  21:00:10-03
 
 
 OPTIONS
@@ -177,6 +178,12 @@ OPTIONS
 #interesting case: -- -220-01-03 -0220-01-01
 
 
+#globs
+SEP='Tt/.:+-'
+GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
+GLOBTIME='@(2[0-4]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9])?(:?([0-5])[0-9]))'
+#https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
+
 YEAR_MONTH_DAYS=(31 28 31 30 31 30 31 31 30 31 30 31)
 TIME_ISO8601_FMT='%Y-%m-%dT%H:%M:%S%z'
 #TIME_RFC5322_FMT='%a, %d %b %Y %H:%M:%S %z'
@@ -193,17 +200,20 @@ INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S - no timezone
 # Setting environment TZ=UTC0 is equivalent to -u. 
 datefun()
 {
-	local options unix_input input_fmt
+	local options unix_input input_fmt globtest ar chars start
 	input_fmt="${INPUT_FMT:-$TIME_ISO8601_FMT}"
 	[[ $1 = -[RIv]* ]] && options="$1" && shift
 
 	if ((BSDDATE))
-	then
+	then 	globtest="*([$IFS])@($GLOBDATE?([$SEP])?(+([$SEP])$GLOBTIME)|$GLOBTIME)?([$SEP])*([$IFS])"
 		[[ ! $1 ]] && set --
-		if [[ $1 = +([0-9])?(.[0-9][0-9]) ]]  #try BSD default fmt [[[[[cc]yy]mm]dd]HH]MM[.ss]
+		if [[ $1 = +([0-9])?(.[0-9][0-9]) ]]  #BSD default fmt [[[[[cc]yy]mm]dd]HH]MM[.ss]
 		then 	"${DATE_CMD[@]}" ${options} -j "$@" && return
-		elif [[ $1 = +([0-9])-+([0-9])-+([0-9]) && ! $OPTF ]]  #try short ISO8601 (no time)
-		then 	"${DATE_CMD[@]}" ${options} -j -f "${TIME_ISO8601_FMT:0:8}" "$@" && return
+		elif [[ $1 = $globtest && ! $OPTF ]]  #ISO8601 variable length
+		then 	ar=(${1//[$SEP]/ })
+			[[ ${1//[$IFS]} = +([0-9])[:]* ]] && start=9 || start=0
+			((chars=(${#ar[@]}*2)+(${#ar[@]}-1) ))
+			"${DATE_CMD[@]}" ${options} -j -f "${TIME_ISO8601_FMT:start:chars}" "$@" && return
 		fi
 		[[ ${1:-+%} != @(+%|@|-f)* ]] && set -- -f"${input_fmt}" "$@"
 		[[ $1 = @* ]] && set -- "-r${1#@}" "${@:2}"
@@ -289,10 +299,10 @@ mainf()
 	then
 		date1_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix1")
 		date2_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix2")
-		if [[ $OPTRR && ${TZ^^} = ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
+		if [[ ! $OPTVERBOSE && $OPTRR && ${TZ^^} = ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
 		then	date1_iso8601_pr=$(TZ=UTC0 datefun -R @"$unix1")
 			date2_iso8601_pr=$(TZ=UTC0 datefun -R @"$unix2")
-		elif [[ ${TZ^^} != ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
+		elif [[ ! $OPTVERBOSE && ${TZ^^} != ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
 		then 	unix1_pr=$(datefun "${1:-+%s}" ${1:++%s})
 			unix2_pr=$(datefun "${2:-+%s}" ${2:++%s})
 			date1_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"$unix1_pr")
@@ -313,8 +323,8 @@ mainf()
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
 	inputB="${date2_iso8601:-$2}"
-	IFS="${IFS}Tt/.:+-" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
-	IFS="${IFS}Tt/.:+-" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
+	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
+	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 	#trim leading zeroes, requires bash extended globbing
 	for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
 	do 	eval "$var=\"${!var##*(0)}\""
@@ -333,8 +343,8 @@ mainf()
 	then 	#swap dates
 		neg_sign=-
 		set -- "$2" "$1" "${@:3}"
-		IFS="${IFS}Tt/.:+-" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
-		IFS="${IFS}Tt/.:+-" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
+		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
+		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 		for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
 		do 	eval "$var=\"${!var##*(0)}\""
 		done
@@ -507,7 +517,7 @@ mainf()
 	#fi
 
 	#single unit time ranges when `bc' is available (ensure `bc' is available)
-	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) && range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
+	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy+DEBUG)) && range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
 		} || ((OPTT))
 	then
 		((!OPTT||OPTTmo)) && range_single_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
@@ -599,7 +609,7 @@ debugf()
 		((DEBUG>1)) && exit ${ret:-0}  #!#
 }
 
-#check if floating number input is plural, set return signal and $SS to ``s''.
+#check if floating point is `>0', set return signal and $SS to ``s'' if floating point is `>1'.
 #usage: prHelpf 1.2
 prHelpf()
 {
@@ -657,7 +667,6 @@ done
 shift $((OPTIND -1)); unset opt
 
 #set proper environment!
-((DEBUG)) && unset OPTVERBOSE
 if ((DEBUG<3 && !OPTU))
 then 	TZ=UTC0  #LC_ALL=C
 fi
@@ -668,11 +677,8 @@ SCL="${SCL:-3}"  #scale
 globoptt='@(y|mo|w|d|h|m|s)'
 [[ ${1,,} = *([$IFS])$globoptt*([$IFS]) ]] && opt="$1" && shift  #single-unit pos arg option
 if [[ $# -eq 0 && ! -t 0 ]]
-then 	sep='Tt/.:+-'
-	globdate='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
-	globtime='@(2[0-3]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-3]|?([01])[0-9])?(:?([0-5])[0-9])?(:?([0-5])[0-9]))'
-	globtest="*([$IFS])@($globdate?(+([$sep])$globtime)|$globtime)*([$IFS])@($globdate?(+([$sep])$globtime)|$globtime)?(+([$IFS])$globoptt)*([$IFS])"  #glob for two ISO8601 dates and possibly pos arg option for single unit range
-	#https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
+then
+	globtest="*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)?(+([$IFS])$globoptt)*([$IFS])"  #glob for two ISO8601 dates and possibly pos arg option for single unit range
 	while IFS= read -r || [[ $REPLY ]]
 	do 	[[ ${REPLY//[$IFS]} ]] || continue
 		if ((!$#))
@@ -686,7 +692,7 @@ then 	sep='Tt/.:+-'
 			then 	set -- "$1" $2
 			fi ;break
 		fi
-	done ;unset sep globdate globtime globtest REPLY
+	done ;unset globtest REPLY
 	[[ ${1,,}\  = $globoptt[$IFS]* ]] && { 	set -- $1 "${@:2:2}" ;opt=$1 ;shift ;}
 fi ;unset globoptt
 [[ $opt ]] && set -- "$@" $opt ;unset opt  #set single-unit option as last pos arg
