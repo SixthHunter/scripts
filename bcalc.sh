@@ -592,7 +592,7 @@ elif [[ ! "$OPTE$OPTS" ]]
 then 	if [[ $BASH_VERSION ]]
 	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")  #bc hack
 	else
-		if [[ $RES = *[.]*[1-9]${RES##*[!0]} ]]
+		if [[ $RES = *[.]*[!0]${RES##*[!0]} ]]
 		then 	RES="${RES%${RES##*[!0]}}"
 		elif [[ $RES = *[.]${RES##*[!0]} ]]
 		then 	RES="${RES%.0*}"
