@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.18  mar/2022  mountaineerbr  GPLv3+
+# v0.16.19  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -328,6 +328,7 @@ mainf()
 	inputB="${date2_iso8601:-$2}"
 	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
+	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}  #skip validity test if no user user input
 
 	#trim leading zeroes
 	for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
@@ -352,16 +353,17 @@ mainf()
 		set -- "$2" "$1" "${@:3}"
 		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
+		monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}
 		for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
 		do 	eval "$var=\"${!var#"${!var%%[!0]*}"}\""
 		done
 		[[ $inputA = -? ]] && yearA=-$yearA ;[[ $inputB = -? ]] && yearB=-$yearB
 	fi
 	#check input validity
-	if	monthAMax=$(month_maxday "$monthA" "$yearA")
+	if 	monthAMax=$(month_maxday "$monthA" "$yearA")
 		monthBmax=$(month_maxday "$monthB" "$yearB")
 		((
-			(yearA==0||yearB==0) ||(monthA>12||monthA==0) || (monthB>12||monthB==0)
+			(yearA==0||yearB==0) || (monthA>12||monthA==0) || (monthB>12||monthB==0)
 			|| (dayA>monthAMax||dayA==0) || (dayB>monthBmax||dayB==0)
 			|| hourA>24 || hourB>24 || minA>60 || minB>60
 			|| secA>60 || secB>60
