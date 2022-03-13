@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.18  mar/2022  by mountaineerbr
+# v0.14.19  mar/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -18,9 +18,6 @@ BCSCALE=16
 #max bc result line length
 export BC_LINE_LENGTH=10000
 #obs:set 0 to disable multiline results in newer bc versions
-
-#word archors
-WORDANCHOR='[^a-zA-Z0-9_]'
 
 #script name
 SN="${0##*/}"
@@ -387,7 +384,7 @@ calcf()
 {
 	local eq bceq
 	eq="$1" bceq="scale=${OPTS:-$BCSCALE}; $eq / 1"
-	[[ "${eq// }" ]] || return
+	[[ ${eq// } ]] || return
 
 	#zshell
 	if [[ $ZSH_VERSION ]]
@@ -417,10 +414,10 @@ notef()
 {
 	local text num
 	text="$*" text="${text//[$'\t\n']/ }"
-	[[ "$text" =~ ^\ *[0-9]+\ * ]] ;[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
+	[[ $text =~ ^\ *[0-9]+\ * ]] ;[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
 	num="${MATCH:-${BASH_REMATCH[0]}}" text="${text#$num}"
-	[[ "$text" =~ ^\ * ]]
-	sed -i -e "${num:-$} s/ *$/ ${text#${MATCH:-${BASH_REMATCH[0]}}}/ ;${num:-$} s/"$'\t'" */"$'\t'"/g" "$BCRECFILE"
+	[[ $text =~ ^\ * ]]
+	sed -i -e "${num:-$} s/ *$/ ${text#"${MATCH:-${BASH_REMATCH[0]}}"}/ ;${num:-$} s/"$'\t'" */"$'\t'"/g" "$BCRECFILE"
 }
 #https://superuser.com/questions/781558/sed-insert-file-before-last-line
 #http://www.yourownlinux.com/2015/04/sed-command-in-linux-append-and-insert-lines-to-file.html
@@ -449,9 +446,9 @@ precff()
 	#generate record file table
 	elif ((OPTP==1))
 	then 	((${2:-0}>10 && ${2:-600}<600)) && truncate="$2"
-		nl -ba -- "$BCRECFILE" | tail -n"${lines:-10}" \
+		nl -w1 -ba -- "$BCRECFILE" | tail -n"${lines:-10}" \
 		| sed -r -e "s/([^\t]{0,${truncate:-40}})[^\t]*/\1/g" -e 's/^(([^\t]*\t){2})([^\t]*)\t/\1{ \3 }\t/' \
-		| if command column --help >/dev/null 2>&1 ;then 	column -ets$'\t' -NINDEX,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
+		| if command column --help >/dev/null 2>&1 ;then 	column -ets$'\t' -NIND,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
 		| less -S
 	#print entire record file
 	elif ((OPTP))
@@ -502,7 +499,7 @@ do 	case $opt in
 	esac
 done
 shift $((OPTIND -1))
-[[ $KSH_VERSION ]] && ZSH_VERSION=KSH93
+[[ $KSH_VERSION ]] && ZSH_VERSION=KSH93u+
 
 #set equation. is it stdin input? (beware options)
 EQ="$*" ;[[ ! -t 0 && $#+OPTN+OPTP -eq 0 ]] && EQ=$(</dev/stdin)
@@ -524,18 +521,22 @@ then
 	#get last result index
 	LASTIND=$(wc -l <"$BCRECFILE")
 	#change special variable to corresponding result or retrieve last result if $EQ is empty
-	while [[ "${EQ:=$BCHOLD}" =~ (^|$WORDANCHOR)(${BCHOLD:-@%@%}[0-9]*)($WORDANCHOR|$) ]]
+	WORDANCHOR='[^a-zA-Z0-9_]'
+	while [[ ${EQ:=$BCHOLD} =~ $WORDANCHOR${BCHOLD:-@%@%}[0-9]*$WORDANCHOR ||
+		 ${EQ:=$BCHOLD} =~ $WORDANCHOR${BCHOLD:-@%@%}[0-9]*$ ||
+		 ${EQ:=$BCHOLD} =~ ^${BCHOLD:-@%@%}[0-9]*$WORDANCHOR ||
+		 ${EQ:=$BCHOLD} =~ ^${BCHOLD:-@%@%}[0-9]*$ ]]
 	do 	[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
-		subeq="${MATCH:-${BASH_REMATCH[0]}}"
-		eqvar="$subeq" eqvar="${eqvar#$WORDANCHOR}" eqvar="${eqvar%$WORDANCHOR}"
+		subeq="${MATCH:-${BASH_REMATCH[0]}}" eqvar="$subeq"
+		eqvar="${eqvar#$WORDANCHOR}" eqvar="${eqvar%$WORDANCHOR}"
 		eqind="${eqvar//[^0-9]}"
-		aleft="${subeq%%$eqvar*}" aright="${subeq##*$eqvar}"
+		aleft="${subeq%%"$eqvar"*}" aright="${subeq##*"$eqvar"}"
 		((eqind)) || eqind=$LASTIND
 		((eqind > LASTIND)) && { echo "err: invalid index reference -- $eqvar" >&2 ;exit 1 ;}
 		recvar=$(awk "NR == $eqind { print \$1 }" "$BCRECFILE")
 
-		[[ "${EQ// }" = "${eqvar:-@%@%}" ]] && SIMPLEVAREQ=1 LASTIND=$eqind
-		EQ="${EQ//"$aleft$eqvar$aright"/$aleft$recvar$aright}" ;[[ "$EQ" ]] || exit
+		[[ ${EQ// } = "${eqvar:-@%@%}" ]] && SIMPLEVAREQ=1 LASTIND=$eqind
+		EQ="${EQ//"$aleft$eqvar$aright"/$aleft$recvar$aright}" ;[[ $EQ ]] || exit
 	done
 	unset subeq eqvar eqind aright aleft recvar
 elif ((OPTN+OPTP))
@@ -543,16 +544,16 @@ then 	echo "$SN: err -- record file not available" >&2 ;exit 1
 fi
 
 #-. dot is input decimal separator
-if [[ "$OPTDEC" = .* ]]
+if [[ $OPTDEC = .* ]]
 then 	EQ="${EQ//,}"
 #-, comma is input decimal separator
-elif [[ "$OPTDEC" = ,* ]]
+elif [[ $OPTDEC = ,* ]]
 then 	EQ="${EQ//.}" EQ="${EQ//,/.}"
 fi
 
 #checks
 #did input change?
-[[ "$OPTV" && "$EQ" != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
+[[ $OPTV && $EQ != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
 #multiple decimal separators: "1.2." "1,2," "1.2,3."  ",.,"  
 if [[
 	"$EQ" =~ [0-9]*[.][0-9]*[.] ||
@@ -565,7 +566,7 @@ fi
 
 #calculate expression result
 RES=$(calcf "$EQ") || exit
-[[ "$RES" ]] || exit
+[[ $RES ]] || exit
 
 #print to record file? dont record duplicate results
 #TSV fields: result, expression, date and note
@@ -577,7 +578,7 @@ then
 	if [[ ( "$RES" != "$lastres" || "${EQ//[$IFS]/}" != "${lasteq//[$IFS]/}" ) && "$SIMPLEVAREQ" -eq 0 ]]
 	then 	echo "$recordout" >>"$BCRECFILE" ;LASTIND=$((LASTIND+1))
 	fi
-elif [[ "$BCRECFILE" ]]  #init tsv
+elif [[ $BCRECFILE ]]  #init tsv
 then 	echo "$recordout" >>"$BCRECFILE"
 fi
 unset recordout lastres lasteq lastdate lastnote timestamp
@@ -588,12 +589,12 @@ if ((OPTT))
 then 	RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
 #trim trailing zeroes, skip if any opt -ce is set
 elif [[ ! "$OPTE$OPTS" ]]
-then 	if [[ "$BASH_VERSION" ]]
+then 	if [[ $BASH_VERSION ]]
 	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")  #bc hack
-	else 	[[ "$ZSH_VERSION" ]] && setopt KSH_GLOB
-		if [[ "$RES" = *[.]*([0-9])[1-9]*([0-9])+([0]) ]]
-		then 	RES="${RES%${RES##*[1-9]}}"
-		elif [[ "$RES" = *[.]+([0]) ]]
+	else
+		if [[ $RES = *[.]*[1-9]${RES##*[!0]} ]]
+		then 	RES="${RES%${RES##*[!0]}}"
+		elif [[ $RES = *[.]${RES##*[!0]} ]]
 		then 	RES="${RES%.0*}"
 		fi
 	fi
@@ -603,7 +604,7 @@ fi
 ((OPTV && LASTIND)) && RES+="	 #$LASTIND#"
 
 #swap output decimal and thousands delimiters?
-if [[ "$OPTDEC" = ?, ]]
+if [[ $OPTDEC = ?, ]]
 then 	tr ., ,. <<<"$RES"
 else 	echo "$RES"
 fi
