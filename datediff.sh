@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.23  mar/2022  mountaineerbr  GPLv3+
+# v0.16.24  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -22,11 +22,11 @@ DESCRIPTION
 	strings. If \`date' is not available then input must be in ISO-8601
 	format.
 
-	If DATE is not set, defaults to \`now'. To flag DATE as UNIX time,
-	prepend an at sign \`@' to it or set option -r. Stdin input sup-
-	ports one DATE string per line (max two lines) or two ISO-8601
-	DATES separated by space in a single line. Input is processed in
-	a best effort basis.
+	If DATE is not set, defaults to \`now' or \`0001-01-01'. To flag
+	DATE as UNIX time, prepend an at sign \`@' to it or set option -r.
+	Stdin input supports one DATE string per line (max two lines) or
+	two ISO-8601 DATES separated by space in a single line. Input is
+	processed in a best effort basis.
 
 	Output RANGES section displays calculated ranges in different units
 	of time (years or months or weeks or days or hours or minutes or
