@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.21  mar/2022  mountaineerbr  GPLv3+
+# v0.16.22  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -289,7 +289,7 @@ isleap()
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_sign date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr range_check monthAMax monthBmax var n r SS SSS
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr range_check monthAMax monthBmax var n r SS SSS
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
@@ -312,7 +312,7 @@ mainf()
 
 		#sort dates
 		if ((unix1 > unix2))
-		then 	neg_sign=-
+		then 	neg_range=-
 			date_buf="$unix1" unix1="$unix2" unix2="$date_buf"
 			date_buf="$unix1_pr" unix1_pr="$unix2_pr" unix2_pr="$date_buf"
 			date_buf="$date1_iso8601" date1_iso8601="$date2_iso8601" date2_iso8601="$date_buf"
@@ -347,7 +347,7 @@ mainf()
 			|| ( (yearA==yearB) && (monthA==monthB) && (dayA==dayB) && (hourA==hourB) && (minA==minB) && (secA>secB) )
 		))
 	then 	#swap dates
-		neg_sign=-
+		neg_range=-
 		inputA="${date2_iso8601:-$2}"
 		inputB="${date1_iso8601:-$1}"
 		set -- "$2" "$1" "${@:3}"
@@ -586,10 +586,10 @@ mainf()
 	
 	#print results
 	if ((!OPTVERBOSE))
-	then 	printf '%s\n%s\t%s\n%s\t%s\n%s\n'  \
-			DATES${neg_sign:+\*}  \
-			"${date1_iso8601_pr:-${date1_iso8601:-$1}}"  "${unix1_pr:-$unix1}"  \
-			"${date2_iso8601_pr:-${date2_iso8601:-$2}}" "${unix2_pr:-$unix2}"  \
+	then 	printf '%s\n%s%s%s\n%s%s%s\n%s\n'  \
+			DATES${neg_range:+\*}  \
+			"${date1_iso8601_pr:-${date1_iso8601:-$1}}" "${unix1:+$'\t'}" "${unix1_pr:-$unix1}"  \
+			"${date2_iso8601_pr:-${date2_iso8601:-$2}}" "${unix2:+$'\t'}" "${unix2_pr:-$unix2}"  \
 			RANGES
 	fi
 	((OPTVERBOSE<3)) && printf '%s\n' "$range_print"
@@ -604,16 +604,16 @@ debugf()
 {
 		#check compound time range against `date' and DATE against `datediff'
 		date1_iso8601="${date1_iso8601:-$1}"  date2_iso8601="${date2_iso8601:-$2}"
-		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${date1_iso8601:0:19}" "${date2_iso8601:0:19}") || ret=255
+		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${date1_iso8601:0:19}" "${date2_iso8601:0:19}") || ((ret+=250))
 		read y_dd mo_dd w_dd d_dd  h_dd m_dd s_dd <<<"$ddout"
 		dd=($y_dd $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
 		if [[ $unix2 ]]
 		then 	range_check=$((unix2-unix1))
-		else 	((ret+=254))
+		else 	((ret+=245))
 		fi
 
 		{ 	[[ $range = "${range_check:-$range}" ]] &&
-			[[ ${sh[*]} = "${dd[*]}" ]]
+			[[ ${sh[*]} = "${dd[*]:-${sh[*]}}" ]]
 		} || { 	echo -ne "\033[2K" >&2
 			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${date1_iso8601:0:19} ${date2_iso8601:0:19}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
 			ret=${ret:-1}
