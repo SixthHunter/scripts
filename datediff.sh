@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17  mar/2022  mountaineerbr  GPLv3+
+# v0.17.1  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -549,12 +549,12 @@ mainf()
 		#print layout of single units
 		if ((! OPTLAYOUT || OPTT))
 		then 	#layout one
-			prHelpf ${OPTTy:-$range_single_y} && range_print="$range_single_y year$SS"
-			prHelpf ${OPTTmo:-$range_single_mo} && range_print+=" | $range_single_mo month$SS"
-			prHelpf ${OPTTw:-$range_single_w} && range_print+=" | $range_single_w week$SS"
-			prHelpf ${OPTTd:-$range_single_d} && range_print+=" | $range_single_d day$SS"
-			prHelpf ${OPTTh:-$range_single_h} && range_print+=" | $range_single_h hour$SS"
-			prHelpf ${OPTTm:-$range_single_m} && range_print+=" | $range_single_m min$SS"
+			prHelpf $range_single_y && range_print="$range_single_y year$SS"
+			prHelpf $range_single_mo && range_print+=" | $range_single_mo month$SS"
+			prHelpf $range_single_w && range_print+=" | $range_single_w week$SS"
+			prHelpf $range_single_d && range_print+=" | $range_single_d day$SS"
+			prHelpf $range_single_h && range_print+=" | $range_single_h hour$SS"
+			prHelpf $range_single_m && range_print+=" | $range_single_m min$SS"
 			prHelpf $range  ;((!OPTT||OPTTs)) && range_print+=" | $range sec$SS"
 			range_print="${range_print:-$range sec$SS}"
 			range_print="${range_print# | }"
@@ -645,7 +645,7 @@ prHelpf()
 	#(A)
 	SS=  val=${1#-} val=${val#0} valx=${val//[0.]} int=${val%.*}
 	[[ $val = *.* ]] && dec=${val#*.} dec=${dec//0}
-	((valx)) || return
+	[[ $val && $OPTT ]] || ((valx)) || return
 	(( int>1 || ( (int==1) && (dec) ) )) && SS=s
 	return 0
 }
@@ -714,7 +714,7 @@ fi
 #print single time unit?
 opt="${opt:-${@: -1}}" opt="${opt//[$IFS]}"
 if [[ $opt = $GLOBOPT ]]
-then 	OPTT=1 OPTVERBOSE=2
+then 	OPTT=1 OPTVERBOSE=2 OPTLAYOUT=
 	case $opt in
 		[yY]) 	OPTTy=1;;
 		[mM][oO]) 	OPTTmo=1;;
