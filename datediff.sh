@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.16.24  mar/2022  mountaineerbr  GPLv3+
+# v0.17  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -22,11 +22,11 @@ DESCRIPTION
 	strings. If \`date' is not available then input must be in ISO-8601
 	format.
 
-	If DATE is not set, defaults to \`now' or \`0001-01-01'. To flag
-	DATE as UNIX time, prepend an at sign \`@' to it or set option -r.
-	Stdin input supports one DATE string per line (max two lines) or
-	two ISO-8601 DATES separated by space in a single line. Input is
-	processed in a best effort basis.
+	If DATE is not set, defaults to \`now'. To flag DATE as UNIX time,
+	prepend an at sign \`@' to it or set option -r. Stdin input sup-
+	ports one DATE string per line (max two lines) or two ISO-8601
+	DATES separated by space in a single line. Input is processed in
+	a best effort basis.
 
 	Output RANGES section displays calculated ranges in different units
 	of time (years or months or weeks or days or hours or minutes or
@@ -96,6 +96,7 @@ SEE ALSO
 EXAMPLES
 	Leap year check
 	$ ${0##*/} -l 2000
+	$ ${0##*/} -l {1980..1990}
 	$ echo 2000 | ${0##*/} -l
 
 	Time ranges
@@ -125,7 +126,7 @@ EXAMPLES
 	$ ${0##*/} -f'%m/%d/%Y' 6/28/2019  9/04/1970 
 	$ ${0##*/} -r 1561243015 1592865415
 	$ ${0##*/}  200002280910.33  0003290010.00
-	$ ${0##*/} -- '-v +1d' '-v -28d'
+	$ ${0##*/} -- '-v +2d' '-v -3w'
 	$ ${0##*/}  2021-12-31T21:00:10  21:00:10-03
 
 
@@ -148,18 +149,17 @@ OPTIONS
 #verbose less than 3 (-v and -vv): run `date' and `bc'; print single unit ranges.
 #verbose less than 2 and more than 2 (-v and -vvv): print compound range.
 #DEBUGGING
-#debug one disables verbose mode switches, so most code is run.
-#debug one or two (-d, -dd): set UTC=0.
+#debug sets TZ=UTC0 and disables verbose mode switches, so most code is run.
 #debug two or more (-dd): set exit signal from debug test against `datediff' and `date' unix time.
-#debug three or more (-ddd): does not set UTC=0.
+#debug three or more (-ddd): does not set TZ=UTC0.
 
 #TESTING RESULTS
-#Testing script: <https://pastebin.com/mPvBDd2q>
+#TESTING SCRIPT: <https://pastebin.com/mPvBDd2q>
 #Hroptatyr's `man datediff' says ``refinement rules'' cover over 99% cases.
 #Calculated `datediff' error rate is at least .00311 (0.3%) of total tested dates (compound range).
 #Results differ from `datediff' in .006275 (0,6%) of all tested dates in script version v0.16.8 (compound range).
 #All differences occur with ``end-of-month vs. start-of-month'' dates, such as days `29, 30 or 31' of one date against days `1, 2 or 3' of the other date.
-#Different results from `datediff' in compound range are not necessarily errors in all cases and may be considered correct albeit with different refinements. This seem to be the case for most, if not all, further differences obtained in testing results.
+#Different results from `datediff' in compound range are not necessarily errors in all cases and may be considered correct albeit with different refinements. This seem to be the case for most, if not all, differences obtained in testing results.
 #No errors were found in range (seconds) calculation and thus single-unit results should all be correct.
 
 #NOTES
@@ -176,11 +176,13 @@ OPTIONS
 #may be easier to support OFFSET instead of TIME ZONE, see distinction:
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
 #America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
-#interesting case: -- -220-01-03 -0220-01-01
+#
+#This script was tested with Bash 5.1. It should run with Bash>3.2 (not thoroughly tested).
 
 
 #globs
 SEP='Tt/.:+-'
+GLOBOPT='@(y|mo|w|d|h|m|s|Y|MO|W|D|H|M|S)'
 GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
 GLOBTIME='@(2[0-4]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9])?(:?([0-5])[0-9]))'
 #https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
@@ -225,7 +227,7 @@ datefun()
 	fi
 }
 #test whether BSD or GNU date is available
-if ((! ${#DATE_CMD[@]})) && DATE_CMD=(date) && ! date --version
+if DATE_CMD=(date); ! date --version
 then 	if gdate --version
 	then 	DATE_CMD=(gdate)
 	elif command -v date
@@ -272,10 +274,10 @@ year_days_adj()
 isleap()
 {
 	local year
+	#year=${1//[$IFS]}
 	year=${1#[+-]} year=${year#"${year%%[!0]*}"}
-	[[ $1 = -* ]] && year=-$year
-	if 	[[ $year = ?(-)+([0-9]) ]] ||
-		{ 	[[ $year =~ ^-?[0-9]{1,4} ]] && year=${BASH_REMATCH[0]} ;}
+	year="${year%%[!0-9]*}" ;[[ ${1} = -?* ]] && year=-$year  #beware of $IFS!
+	if 	[[ $year = ?(-)+([0-9])* ]]
 	then
 		if (( !(year % 4) && ( year % 100 || !(year % 400) ) ))
 		then 	((OPTVERBOSE)) || echo "leap year -- $year" ;return 0
@@ -283,17 +285,18 @@ isleap()
 		fi
 	else 	echo "${0##*/}: err  -- year must be in the format YYYY" >&2
 	fi
-	return 1
+	return $((++RET))
 }
 #https://stackoverflow.com/questions/32196629/my-shell-script-for-checking-leap-year-is-showing-error
 
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr range_check monthAMax monthBmax var n r SS SSS
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBmax tz_utc now var n r SS SSS
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
+	[[ $TZ = ?(+|-)@([Uu][Tt][Cc]?(?(+|-)+(0|:))|+(0|:)) ]] && tz_utc=1  #is TZ=UTC0?
 
 	#if command `date' is available, get unix times from input string
 	if 	unix1=$(TZ=UTC0 datefun "${1:-+%s}" ${1:++%s}) &&
@@ -301,14 +304,13 @@ mainf()
 	then
 		date1_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix1")
 		date2_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix2")
-		if [[ ! $OPTVERBOSE && $OPTRR && ${TZ^^} = ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
-		then	date1_iso8601_pr=$(TZ=UTC0 datefun -R @"$unix1")
-			date2_iso8601_pr=$(TZ=UTC0 datefun -R @"$unix2")
-		elif [[ ! $OPTVERBOSE && ${TZ^^} != ?(+|-)@(UTC-0|UTC0|UTC|0*(0)) ]]
+		if [[ ! $OPTVERBOSE$tz_utc ]]
 		then 	unix1_pr=$(datefun "${1:-+%s}" ${1:++%s})
 			unix2_pr=$(datefun "${2:-+%s}" ${2:++%s})
-			date1_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"$unix1_pr")
-			date2_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"$unix2_pr")
+		fi
+		if [[ ! $OPTVERBOSE && (! $tz_utc || $OPTRR) ]]
+		then 	date1_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix1_pr:-$unix1}")
+			date2_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix2_pr:-$unix2}")
 		fi
 
 		#sort dates
@@ -322,21 +324,22 @@ mainf()
 	else 	unset unix1 unix2
 	fi
 	#set default date -- AD
-	[[ ! $1 ]] && set -- 0001-01-01 "${@:2}"
-	[[ ! $2 ]] && set -- "$1" 0001-01-01 "${@:3}"
+	[[ ! $1 || ! $2 ]] && now=$(datefun -Iseconds) || now=0001-01-01
+	[[ ! $1 ]] && set -- "${now:0:19}" "${@:2}"
+	[[ ! $2 ]] && set -- "$1" "${now:0:19}" "${@:3}"
 	#load ISO8601 dates from `date' or user input
-	inputA="${date1_iso8601:-$1}"
-	inputB="${date2_iso8601:-$2}"
+	inputA="${date1_iso8601:-$1}" inputA="${inputA//+(-)/-}" inputA="${inputA//+(+)/+}"
+	inputB="${date2_iso8601:-$2}" inputB="${inputB//+(-)/-}" inputB="${inputB//+(+)/+}"
 	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
-	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}  #skip validity test if no user user input
+	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}  #validate test if `no' user input
 
 	#trim leading zeroes
 	for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
-	do 	eval "$var=\"${!var#"${!var%%[!0]*}"}\""  #;eval "$var=\"${!var:-0}\""
+	do 	eval "$var=\"${!var#"${!var%%[!0]*}"}\""
 	done
 	#https://www.oasys.net/fragments/leading-zeros-in-bash/
-	[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB  #year<0
+	[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB  #negative year
 
 	#sort dates if unix times were not generated by `date' previously
 	if [[ ! $unix2 ]] &&
@@ -349,8 +352,8 @@ mainf()
 		))
 	then 	#swap dates
 		neg_range=-
-		inputA="${date2_iso8601:-$2}"
-		inputB="${date1_iso8601:-$1}"
+		inputA="${date2_iso8601:-$2}" inputA="${inputA//+(-)/-}" inputA="${inputA//+(+)/+}"
+		inputB="${date1_iso8601:-$1}" inputB="${inputB//+(-)/-}" inputB="${inputB//+(+)/+}"
 		set -- "$2" "$1" "${@:3}"
 		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
@@ -363,11 +366,10 @@ mainf()
 	#check input validity
 	if 	monthAMax=$(month_maxday "$monthA" "$yearA")
 		monthBmax=$(month_maxday "$monthB" "$yearB")
+		! ((yearA && yearB && monthA && monthB && dayA && dayB)) ||
 		((
-			(yearA==0||yearB==0) || (monthA>12||monthA==0) || (monthB>12||monthB==0)
-			|| (dayA>monthAMax||dayA==0) || (dayB>monthBmax||dayB==0)
-			|| hourA>24 || hourB>24 || minA>60 || minB>60
-			|| secA>60 || secB>60
+			monthA>12 || monthB>12 || dayA>monthAMax || dayB>monthBmax
+			|| hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60
 		))
 	then 	echo "err: illegal user input" >&2 ;return 2
 	fi
@@ -547,13 +549,13 @@ mainf()
 		#print layout of single units
 		if ((! OPTLAYOUT || OPTT))
 		then 	#layout one
-			prHelpf $range_single_y && range_print="$range_single_y year$SS"
-			prHelpf $range_single_mo && range_print+=" | $range_single_mo month$SS"
-			prHelpf $range_single_w && range_print+=" | $range_single_w week$SS"
-			prHelpf $range_single_d && range_print+=" | $range_single_d day$SS"
-			prHelpf $range_single_h && range_print+=" | $range_single_h hour$SS"
-			prHelpf $range_single_m && range_print+=" | $range_single_m min$SS"
-			prHelpf $range ;((!OPTT||OPTTs)) && range_print+=" | $range sec$SS"
+			prHelpf ${OPTTy:-$range_single_y} && range_print="$range_single_y year$SS"
+			prHelpf ${OPTTmo:-$range_single_mo} && range_print+=" | $range_single_mo month$SS"
+			prHelpf ${OPTTw:-$range_single_w} && range_print+=" | $range_single_w week$SS"
+			prHelpf ${OPTTd:-$range_single_d} && range_print+=" | $range_single_d day$SS"
+			prHelpf ${OPTTh:-$range_single_h} && range_print+=" | $range_single_h hour$SS"
+			prHelpf ${OPTTm:-$range_single_m} && range_print+=" | $range_single_m min$SS"
+			prHelpf $range  ;((!OPTT||OPTTs)) && range_print+=" | $range sec$SS"
 			range_print="${range_print:-$range sec$SS}"
 			range_print="${range_print# | }"
 		else 	#layout two
@@ -587,10 +589,12 @@ mainf()
 	
 	#print results
 	if ((!OPTVERBOSE))
-	then 	printf '%s\n%s%s%s\n%s%s%s\n%s\n'  \
-			DATES${neg_range:+\*}  \
-			"${date1_iso8601_pr:-${date1_iso8601:-$1}}" "${unix1:+$'\t'}" "${unix1_pr:-$unix1}"  \
-			"${date2_iso8601_pr:-${date2_iso8601:-$2}}" "${unix2:+$'\t'}" "${unix2_pr:-$unix2}"  \
+	then 	pr1="${yearA}-${monthA}-${dayA}T${hourA}:${minA}:${secA}" pr1="${pr1%%*([$SEP])}"
+		pr2="${yearB}-${monthB}-${dayB}T${hourB}:${minB}:${secB}" pr2="${pr2%%*([$SEP])}"
+		printf '%s%s\n%s%s%s\n%s%s%s\n%s\n'  \
+			DATES "${neg_range:+*}"  \
+			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" "${unix1:+$'\t'}" "${unix1_pr:-$unix1}"  \
+			"${date2_iso8601_pr:-${date2_iso8601:-${pr2:-$inputB}}}" "${unix2:+$'\t'}" "${unix2_pr:-$unix2}"  \
 			RANGES
 	fi
 	((OPTVERBOSE<3)) && printf '%s\n' "$range_print"
@@ -604,8 +608,7 @@ mainf()
 debugf()
 {
 		#check compound time range against `date' and DATE against `datediff'
-		date1_iso8601="${date1_iso8601:-$1}"  date2_iso8601="${date2_iso8601:-$2}"
-		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${date1_iso8601:0:19}" "${date2_iso8601:0:19}") || ((ret+=250))
+		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${inputA:0:19}" "${inputB:0:19}") || ((ret+=250))
 		read y_dd mo_dd w_dd d_dd  h_dd m_dd s_dd <<<"$ddout"
 		dd=($y_dd $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
 		if [[ $unix2 ]]
@@ -616,7 +619,7 @@ debugf()
 		{ 	[[ $range = "${range_check:-$range}" ]] &&
 			[[ ${sh[*]} = "${dd[*]:-${sh[*]}}" ]]
 		} || { 	echo -ne "\033[2K" >&2
-			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${date1_iso8601:0:19} ${date2_iso8601:0:19}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
+			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${inputA:0:19} ${inputB:0:19}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
 			ret=${ret:-1}
 		}
 		((DEBUG>1)) && exit ${ret:-0}  #!#
@@ -681,35 +684,49 @@ done
 shift $((OPTIND -1)); unset opt
 
 #set proper environment!
-if ((DEBUG<3 && !OPTU))
-then 	TZ=UTC0  #LC_ALL=C
-fi
+((!OPTU)) && TZ=UTC0  #LC_ALL=C
 export TZ
-SCL="${SCL:-3}"  #scale
+SCL="${SCL:-3}"  #scale defaults
 
 #stdin input
-globoptt='@(y|mo|w|d|h|m|s)'
-[[ ${1,,} = *([$IFS])$globoptt*([$IFS]) ]] && opt="$1" && shift  #single-unit pos arg option
+[[ ${1//[$IFS]} = $GLOBOPT ]] && opt="$1" && shift
 if [[ $# -eq 0 && ! -t 0 ]]
 then
-	globtest="*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)?(+([$IFS])$globoptt)*([$IFS])"  #glob for two ISO8601 dates and possibly pos arg option for single unit range
+	globtest="*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)?(+([$IFS])$GLOBOPT)*([$IFS])"  #glob for two ISO8601 dates and possibly pos arg option for single unit range
 	while IFS= read -r || [[ $REPLY ]]
 	do 	[[ ${REPLY//[$IFS]} ]] || continue
 		if ((!$#))
 		then 	set -- "$REPLY" ;((OPTL)) && break
 			#check if arg contains TWO ISO8601 dates and break
-			if REPLY=($1) ;[[ ${#REPLY[@]} -eq 2 && \ ${1,,} = @(*[$IFS]$globoptt|$globtest) ]]
+			if REPLY=($1) ;[[ (${#REPLY[@]} -eq 3 || ${#REPLY[@]} -eq 2) && \ $1 = @(*[$IFS]$GLOBOPT*|$globtest) ]]
 			then 	set -- $1 ;break
 			fi
 		else 	set -- "$1" "$REPLY"
-			if REPLY=($2) ;[[ ${#REPLY[@]} -eq 2 && \ ${2,,} = @(*[$IFS]$globoptt|$globtest) ]]
+			if REPLY=($2) ;[[ ${#REPLY[@]} -eq 2 && \ $2 = @(*[$IFS]$GLOBOPT|$globtest) ]]
 			then 	set -- "$1" $2
 			fi ;break
 		fi
 	done ;unset globtest REPLY
-	[[ ${1,,}\  = $globoptt[$IFS]* ]] && { 	set -- $1 "${@:2:2}" ;opt=$1 ;shift ;}
-fi ;unset globoptt
-[[ $opt ]] && set -- "$@" $opt ;unset opt  #set single-unit option as last pos arg
+	[[ ${1//[$IFS]} = $GLOBOPT ]] && opt="$1" && shift
+fi
+[[ $opt ]] && set -- "$@" "$opt"
+
+#print single time unit?
+opt="${opt:-${@: -1}}" opt="${opt//[$IFS]}"
+if [[ $opt = $GLOBOPT ]]
+then 	OPTT=1 OPTVERBOSE=2
+	case $opt in
+		[yY]) 	OPTTy=1;;
+		[mM][oO]) 	OPTTmo=1;;
+		[wW]) 	OPTTw=1;;
+		[dD]) 	OPTTd=1;;
+		[hH]) 	OPTTh=1;;
+		[mm]) 	OPTTm=1;;
+		[sS]) 	OPTTs=1;;
+	esac ;set -- "${@:1:$#-1}"
+fi ;unset opt
+#caveat: `gnu date' understands `-d[a-z]', do `-d[a-z]0' to pass.
+[[ $1 = [a-zA-Z] || $2 = [a-zA-Z] ]] && { 	echo "err: illegal user input" >&2 ;exit 2 ;} 
 
 #whitespace trimming
 if (($#>1))
@@ -726,17 +743,11 @@ elif ((OPTR && $#))
 then 	set -- @"${1#@}"
 fi
 
-#print a single time unit?
-opt="${@: -1}" opt="${opt,,}"
-if [[ ${opt// } =~ ^(y|mo|w|d|h|m|s)$ ]]
-then 	OPTT=1 OPTVERBOSE=2
-	eval "OPTT${BASH_REMATCH[1]}=1"
-	set -- "${@:1:$#-1}"
-fi ;unset opt
-
 if ((OPTL))
 then 	#leap year check
-	isleap "$@"
+	for year in $*
+	do 	isleap $year
+	done
 else 	#datediff fun
 	mainf "$@"
 fi
