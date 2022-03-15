@@ -645,7 +645,7 @@ prHelpf()
 	#(A)
 	SS=  val=${1#-} val=${val#0} valx=${val//[0.]} int=${val%.*}
 	[[ $val = *.* ]] && dec=${val#*.} dec=${dec//0}
-	[[ $val && $OPTT ]] || ((valx)) || return
+	[[ $1 && $OPTT ]] || ((valx)) || return
 	(( int>1 || ( (int==1) && (dec) ) )) && SS=s
 	return 0
 }
