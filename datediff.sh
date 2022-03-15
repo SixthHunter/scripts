@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.1  mar/2022  mountaineerbr  GPLv3+
+# v0.17.2  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -694,19 +694,19 @@ if [[ $# -eq 0 && ! -t 0 ]]
 then
 	globtest="*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)*([$IFS])@($GLOBDATE?(+([$SEP])$GLOBTIME)|$GLOBTIME)?(+([$IFS])$GLOBOPT)*([$IFS])"  #glob for two ISO8601 dates and possibly pos arg option for single unit range
 	while IFS= read -r || [[ $REPLY ]]
-	do 	[[ ${REPLY//[$IFS]} ]] || continue
+	do 	ar=($REPLY) ;((${#ar[@]})) || continue
 		if ((!$#))
 		then 	set -- "$REPLY" ;((OPTL)) && break
 			#check if arg contains TWO ISO8601 dates and break
-			if REPLY=($1) ;[[ (${#REPLY[@]} -eq 3 || ${#REPLY[@]} -eq 2) && \ $1 = @(*[$IFS]$GLOBOPT*|$globtest) ]]
-			then 	set -- $1 ;break
+			if [[ (${#ar[@]} -eq 3 || ${#ar[@]} -eq 2) && \ $REPLY = @(*[$IFS]$GLOBOPT*|$globtest) ]]
+			then 	set -- $REPLY  ;[[ $1 = $GLOBOPT ]] || break
 			fi
-		else 	set -- "$1" "$REPLY"
-			if REPLY=($2) ;[[ ${#REPLY[@]} -eq 2 && \ $2 = @(*[$IFS]$GLOBOPT|$globtest) ]]
-			then 	set -- "$1" $2
+		else 	if [[ ${#ar[@]} -eq 2 && \ $REPLY = @(*[$IFS]$GLOBOPT|$globtest) ]]
+			then 	set -- "$@" $REPLY
+			else 	set -- "$@" "$REPLY"
 			fi ;break
 		fi
-	done ;unset globtest REPLY
+	done ;unset ar globtest REPLY
 	[[ ${1//[$IFS]} = $GLOBOPT ]] && opt="$1" && shift
 fi
 [[ $opt ]] && set -- "$@" "$opt"
