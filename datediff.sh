@@ -177,7 +177,7 @@ OPTIONS
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
 #America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
 #
-#This script was tested with Bash 5.1. It should run with Bash>3.2 (not thoroughly tested).
+#This script was tested with Bash 5.1. It should run with Bash3.2+ (not thoroughly tested).
 
 
 #globs
@@ -292,7 +292,7 @@ isleap()
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBmax tz_utc now var n r SS SSS
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBmax tz_utc now var ar n r SS SSS
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
