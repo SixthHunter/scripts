@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.2  mar/2022  mountaineerbr  GPLv3+
+# v0.17.3  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -17,7 +17,7 @@ DESCRIPTION
 	Calculate time ranges between DATE1 and DATE2.
 
 	Input DATE strings must be ISO-8601 \`%Y-%m-%dT%H:%M:%S' if using
-	\`BSD date' unless option \`-f FMT' is set to a new input time
+	\`FreeBSD date' unless option \`-f FMT' is set to a new input time
 	format. \`GNU date' accepts mostly free format human readable date
 	strings. If \`date' is not available then input must be in ISO-8601
 	format.
@@ -46,12 +46,12 @@ DESCRIPTION
 	calendar is assumed. No leap seconds.
 
 	Timezone is read from environment \$TZ by the \`date' programme.
-	Timezone features are only available with GNU or BSD \`date'.
+	Timezone features are only available with GNU or FreeBSD \`date'.
 
 
 ENVIRONMENT
-	TZ 	Sets timezone name, read by \`date' programme; internally
-		and for debugging UTC0 is always set.
+	TZ 	Sets timezone name, read by \`date' programme; UTC0 is
+		always set for main calculations and debugging.
 
 
 REFINEMENT RULES
@@ -93,10 +93,18 @@ SEE ALSO
 	--Lost reference
 
 
+WARRANTY
+	Licensed under the GNU General Public License 3 or better. This
+	software is distributed without support or bug corrections.
+
+	Bash3.1+ is required. \`Bc' is required for single-unit calcula-
+	tions. GNU or FreeBSD12.0+ \`date' is optionally required.
+
+
 EXAMPLES
 	Leap year check
 	$ ${0##*/} -l 2000
-	$ ${0##*/} -l {1980..1990}
+	$ ${0##*/} -l {1980..2000}
 	$ echo 2000 | ${0##*/} -l
 
 	Time ranges
@@ -177,7 +185,7 @@ OPTIONS
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
 #America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
 #
-#This script was tested with Bash 5.1. It should run with Bash3.2+ (not thoroughly tested).
+#This script was tested with Bash 5.1. It should run with Bash3.1+ (not thoroughly tested).
 
 
 #globs
@@ -199,7 +207,7 @@ INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S - no timezone
 # datefun.sh [-u|-R|-v[val]|-I[fmt]]
 #
 # By defaults, input should be UNIX time (append @) or ISO8601 format.
-# Option -I `fmt' may be `date', `hours', `minutes' or `seconds'.
+# Option -I `fmt' may be `date', `hours', `minutes' or `seconds' (added in FreeBSD12.0).
 # Setting environment TZ=UTC0 is equivalent to -u. 
 datefun()
 {
@@ -210,7 +218,7 @@ datefun()
 	if ((BSDDATE))
 	then 	globtest="*([$IFS])@($GLOBDATE?([$SEP])?(+([$SEP])$GLOBTIME)|$GLOBTIME)?([$SEP])*([$IFS])"
 		[[ ! $1 ]] && set --
-		if [[ $1 = +([0-9])?(.[0-9][0-9]) ]]  #BSD default fmt [[[[[cc]yy]mm]dd]HH]MM[.ss]
+		if [[ $1 = +([0-9])?(.[0-9][0-9]) && ! $OPTF ]]  #default fmt [[[[[cc]yy]mm]dd]HH]MM[.ss]
 		then 	"${DATE_CMD[@]}" ${options} -j "$@" && return
 		elif [[ $1 = $globtest && ! $OPTF ]]  #ISO8601 variable length
 		then 	ar=(${1//[$SEP]/ })
@@ -301,7 +309,7 @@ mainf()
 	#if command `date' is available, get unix times from input string
 	if 	unix1=$(TZ=UTC0 datefun "${1:-+%s}" ${1:++%s}) &&
 		unix2=$(TZ=UTC0 datefun "${2:-+%s}" ${2:++%s})
-	then
+	then 	{
 		date1_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix1")
 		date2_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix2")
 		if [[ ! $OPTVERBOSE$tz_utc ]]
@@ -312,6 +320,7 @@ mainf()
 		then 	date1_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix1_pr:-$unix1}")
 			date2_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix2_pr:-$unix2}")
 		fi
+		}  2>/dev/null  #avoid printing errs with FreeBSD<12.0 `date'
 
 		#sort dates
 		if ((unix1 > unix2))
@@ -324,7 +333,7 @@ mainf()
 	else 	unset unix1 unix2
 	fi
 	#set default date -- AD
-	[[ ! $1 || ! $2 ]] && now=$(datefun -Iseconds) || now=0001-01-01
+	[[ ! $1 || ! $2 ]] && now=$(datefun -Iseconds  2>/dev/null) || now=0001-01-01
 	[[ ! $1 ]] && set -- "${now:0:19}" "${@:2}"
 	[[ ! $2 ]] && set -- "$1" "${now:0:19}" "${@:3}"
 	#load ISO8601 dates from `date' or user input
@@ -537,7 +546,8 @@ mainf()
 	#fi
 
 	#single unit time ranges when `bc' is available (ensure `bc' is available)
-	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) && range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
+	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) &&
+		range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
 		} || ((OPTT))
 	then
 		((!OPTT||OPTTmo)) && range_single_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
@@ -607,7 +617,7 @@ mainf()
 #info: re-add this code to mainf() loop directly for massive testing (runs faster).
 debugf()
 {
-		#check compound time range against `date' and DATE against `datediff'
+		#check compound time range against `date' and DATE against `datediff/ddiff'
 		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${inputA:0:19}" "${inputB:0:19}") || ((ret+=250))
 		read y_dd mo_dd w_dd d_dd  h_dd m_dd s_dd <<<"$ddout"
 		dd=($y_dd $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
