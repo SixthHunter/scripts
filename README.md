@@ -7,7 +7,7 @@ SCRIPT NAME | DESCRIPTION
 __ala.sh__ | Arch Linux Archives (aka ALA) explorer
 __anta.sh__ | Explorador do site &lt;oantagonista.com&gt;; spider of the website &lt;oantagonista.com&gt;
 __bakkt.sh__ | Price and contract/volume tickers from bakkt public api
-__bcalc.sh__ | Simple wrapper for Bash Bc that keeps a record of results
+__bcalc.sh__ | Simple wrapper for Bash Bc and Zsh maths that keeps a record of results
 __bcalc_ext.bc__ | *bcalc.sh* extensions for bash bc
 __binance.sh__ |  Binance public API, crypto converter, prices, book depth, coin ticker
 __binfo.sh__ | Blockchain explorer for bitcoin; uses <blockchain.info> and <blockchair.com> public apis; notification on new block found
