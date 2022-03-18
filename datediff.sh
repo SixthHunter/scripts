@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.4  mar/2022  mountaineerbr  GPLv3+
+# v0.17.5  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -97,7 +97,7 @@ WARRANTY
 	Licensed under the GNU General Public License 3 or better. This
 	software is distributed without support or bug corrections.
 
-	Bash3.1+ is required. \`Bc' is required for single-unit calcula-
+	Bash2.05b+ is required. \`Bc' is required for single-unit calcula-
 	tions. GNU or FreeBSD12.0+ \`date' is optionally required.
 
 
@@ -162,7 +162,7 @@ OPTIONS
 #debug three or more (-ddd): does not set TZ=UTC0.
 
 #TESTING RESULTS
-#TESTING SCRIPT: <https://pastebin.com/mPvBDd2q>
+#TESTING SCRIPT: <https://pastebin.com/27RjhjCH>.
 #Hroptatyr's `man datediff' says ``refinement rules'' cover over 99% cases.
 #Calculated `datediff' error rate is at least .00311 (0.3%) of total tested dates (compound range).
 #Results differ from `datediff' in .006275 (0,6%) of all tested dates in script version v0.16.8 (compound range).
@@ -185,7 +185,7 @@ OPTIONS
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
 #America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
 #
-#This script was tested with Bash 5.1. It should run with Bash3.1+ (not thoroughly tested).
+#This script was tested with Bash 5.1. It *should run* with Bash2.05b+.
 
 
 #globs
@@ -246,6 +246,7 @@ fi >/dev/null 2>&1
 
 #print the maximum number of days of a given month
 #usage: month_maxday [MONTH] [YEAR]
+#MONTH range 1-12; YEAR cannot be nought.
 month_maxday()
 {
 	local month year
@@ -300,7 +301,7 @@ isleap()
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_single_w range_single_d range_single_h range_single_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save range_single_y range_single_mo d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBmax tz_utc now var ar n r SS SSS
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_y range_mo range_w range_d range_h range_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBMax tz_utc now varname var ar n r SS SSS
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
@@ -342,10 +343,10 @@ mainf()
 	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}  #validate test if `no' user input
-
 	#trim leading zeroes
-	for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
-	do 	eval "$var=\"${!var#"${!var%%[!0]*}"}\""
+	for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
+	do 	eval "var=\"\$$varname\""
+	 	eval "$varname=\"${var#"${var%%[!0]*}"}\""
 	done
 	#https://www.oasys.net/fragments/leading-zeros-in-bash/
 	[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB  #negative year
@@ -367,17 +368,18 @@ mainf()
 		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 		monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}
-		for var in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
-		do 	eval "$var=\"${!var#"${!var%%[!0]*}"}\""
+		for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
+		do 	eval "var=\"\$$varname\""
+	 		eval "$varname=\"${var#"${var%%[!0]*}"}\""
 		done
 		[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB
 	fi
 	#check input validity
 	if 	monthAMax=$(month_maxday "$monthA" "$yearA")
-		monthBmax=$(month_maxday "$monthB" "$yearB")
+		monthBMax=$(month_maxday "$monthB" "$yearB")
 		! ((yearA && yearB && monthA && monthB && dayA && dayB)) ||
 		((
-			monthA>12 || monthB>12 || dayA>monthAMax || dayB>monthBmax
+			monthA>12 || monthB>12 || dayA>monthAMax || dayB>monthBMax
 			|| hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60
 		))
 	then 	echo "err: illegal user input" >&2 ;return 2
@@ -398,7 +400,8 @@ mainf()
 
 	#date2 days so far this year (this month)
 	#days in prior months `this' year
-	for ((month_test=(monthB-1);month_test>( (yearA==yearB) ? monthA : 0);--month_test))
+	((month_tgt = (yearA==yearB ? monthA : 0) ))
+	for ((month_test=(monthB-1);month_test>month_tgt;--month_test))
 	do
 		if (( (month_test == 2) && !(yearB % 4) && (yearB % 100 || !(yearB % 400) ) ))
 		then 	(( fullmonth_days += 29 ))
@@ -410,7 +413,7 @@ mainf()
 	#date1 days until end of `that' year
 	#days in prior months `that' year
 	((yearA==yearB)) ||
-	for ((month_test=(monthA+1);month_test<( (yearA==yearB) ? monthB : 13);++month_test))
+	for ((month_test=(monthA+1);month_test<13;++month_test))
 	do
 		if (( (month_test == 2) && !(yearA % 4) && (yearA % 100 || !(yearA % 400) ) ))
 		then 	(( fullmonth_days += 29 ))
@@ -420,12 +423,9 @@ mainf()
 	done
 	((fullmonth_days_save = fullmonth_days))
 
-	#need some info about input dates and their context..
-	date3_month_max_day=$(month_maxday "$((monthB-1))" "$yearB")
-	#date2_month_max_day=$(month_maxday "$monthB" "$yearB")
+	#some info about input dates and their context..
+	date3_month_max_day=$(month_maxday "$((monthB==1 ? 12 : monthB-1))" "$yearB")
 	date1_month_max_day=$(month_maxday "$monthA" "$yearA")
-	#date1_year_days=$(year_days "$monthA" "$yearA")
-	#date2_year_days=$(year_days "$monthB" "$yearB")
 	date1_year_days_adj=$(year_days_adj "$monthA" "$yearA")
 
 
@@ -547,38 +547,38 @@ mainf()
 
 	#single unit time ranges when `bc' is available (ensure `bc' is available)
 	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) &&
-		range_single_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
+		range_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
 		} || ((OPTT))
 	then
-		((!OPTT||OPTTmo)) && range_single_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
-		((!OPTT||OPTTw)) && range_single_w=$(bc <<<"scale=${SCL}; ${range:-0} / 604800")
-		((!OPTT||OPTTd)) && range_single_d=$(bc <<<"scale=${SCL}; ${range:-0} / 86400")
-		((!OPTT||OPTTh)) && range_single_h=$(bc <<<"scale=${SCL}; ${range:-0} / 3600")
-		((!OPTT||OPTTm)) && range_single_m=$(bc <<<"scale=${SCL}; ${range:-0} / 60")
+		((!OPTT||OPTTmo)) && range_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
+		((!OPTT||OPTTw)) && range_w=$(bc <<<"scale=${SCL}; ${range:-0} / 604800")
+		((!OPTT||OPTTd)) && range_d=$(bc <<<"scale=${SCL}; ${range:-0} / 86400")
+		((!OPTT||OPTTh)) && range_h=$(bc <<<"scale=${SCL}; ${range:-0} / 3600")
+		((!OPTT||OPTTm)) && range_m=$(bc <<<"scale=${SCL}; ${range:-0} / 60")
 
 		#print layout of single units
 		if ((! OPTLAYOUT || OPTT))
 		then 	#layout one
-			prHelpf $range_single_y && range_print="$range_single_y year$SS"
-			prHelpf $range_single_mo && range_print+=" | $range_single_mo month$SS"
-			prHelpf $range_single_w && range_print+=" | $range_single_w week$SS"
-			prHelpf $range_single_d && range_print+=" | $range_single_d day$SS"
-			prHelpf $range_single_h && range_print+=" | $range_single_h hour$SS"
-			prHelpf $range_single_m && range_print+=" | $range_single_m min$SS"
-			prHelpf $range  ;((!OPTT||OPTTs)) && range_print+=" | $range sec$SS"
+			prHelpf $range_y && range_print="$range_y year$SS"
+			prHelpf $range_mo && range_print="$range_print | $range_mo month$SS"
+			prHelpf $range_w && range_print="$range_print | $range_w week$SS"
+			prHelpf $range_d && range_print="$range_print | $range_d day$SS"
+			prHelpf $range_h && range_print="$range_print | $range_h hour$SS"
+			prHelpf $range_m && range_print="$range_print | $range_m min$SS"
+			prHelpf $range  ;((!OPTT||OPTTs)) && range_print="$range_print | $range sec$SS"
 			range_print="${range_print# | }"
 		else 	#layout two
-			for r in ${#range_single_y} ${#range_single_mo} ${#range_single_w} ${#range_single_d} ${#range_single_h} ${#range_single_m} $((${#range}+SCL+1))
+			for r in ${#range_y} ${#range_mo} ${#range_w} ${#range_d} ${#range_h} ${#range_m} $((${#range}+SCL+1))
 			do ((r>n && (n=r) ))
 			done
-			prHelpf $range_single_y $n && range_print=Year$SS$'\t'$SSS$range_single_y
-			prHelpf $range_single_mo $n && range_print+=$'\n'Month$SS$'\t'$SSS$range_single_mo
-			prHelpf $range_single_w $n && range_print+=$'\n'Week$SS$'\t'$SSS$range_single_w
-			prHelpf $range_single_d $n && range_print+=$'\n'Day$SS$'\t'$SSS$range_single_d
-			prHelpf $range_single_h $n && range_print+=$'\n'Hour$SS$'\t'$SSS$range_single_h
-			prHelpf $range_single_m $n && range_print+=$'\n'Min$SS$'\t'$SSS$range_single_m
+			prHelpf $range_y $n && range_print=Year$SS$'\t'$SSS$range_y
+			prHelpf $range_mo $n && range_print="$range_print"$'\n'Month$SS$'\t'$SSS$range_mo
+			prHelpf $range_w $n && range_print="$range_print"$'\n'Week$SS$'\t'$SSS$range_w
+			prHelpf $range_d $n && range_print="$range_print"$'\n'Day$SS$'\t'$SSS$range_d
+			prHelpf $range_h $n && range_print="$range_print"$'\n'Hour$SS$'\t'$SSS$range_h
+			prHelpf $range_m $n && range_print="$range_print"$'\n'Min$SS$'\t'$SSS$range_m
 			prHelpf $range $((n - (SCL>0 ? (SCL+1) : 0) ))
-			range_print+=$'\n'Sec$SS$'\t'$SSS$range
+			range_print="$range_print"$'\n'Sec$SS$'\t'$SSS$range
 			range_print="${range_print#[$IFS]}"
 			((OPTLAYOUT>1)) && range_print="${range_print// ./0.}"
 			#https://www.themathdoctors.org/should-we-put-zero-before-a-decimal-point/
@@ -647,7 +647,7 @@ prHelpf()
 	if (($#>1))
 	then 	SSS=  x=$(( ${2} - ${#1} ))
 		for ((z=0;z<x;++z))
-		do 	SSS+=' '
+		do 	SSS="$SSS "
 		done
 	fi
 
