@@ -13,7 +13,7 @@ __binance.sh__ |  Binance public API, crypto converter, prices, book depth, coin
 __binfo.sh__ | Blockchain explorer for bitcoin; uses <blockchain.info> and <blockchair.com> public apis; notification on new block found
 __brasilbtc.sh__ | Fetches bitcoin rates from brazilian exchanges public apis. Puxa cotações de bitcoin de agências de câmbio brasileiras de apis públicas
 __cep.sh__ | CEP por Nome de Rua e Vice-Versa
-___cgk.sh___ | <Coinggecko.com> public api, convert one crypto, bank/fiat or metal currency into any another, market ticker, cryptocurrency ticker. This is my favorite everyday-use script for all-currency rates!
+___cgk.sh___ | <Coinggecko.com> public api, convert one crypto, bank/fiat currency or metal into any another, market ticker, cryptocurrency ticker. This is my favorite everyday-use script for all-currency rates!
 __cmc.sh__ |  <Coinmarketcap.com> convert any amount of one crypto, bank/fiat currency or metal into any another, NON-public api access
 __conkykiller.sh__ | Start/restart conkies regularly to deal with terrible IO ops memory leaks
 __ctemp.sh__ | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
