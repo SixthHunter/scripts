@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.5  mar/2022  mountaineerbr  GPLv3+
+# v0.17.6  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -305,7 +305,7 @@ mainf()
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
-	[[ $TZ = ?(+|-)@([Uu][Tt][Cc]?(?(+|-)+(0|:))|+(0|:)) ]] && tz_utc=1  #is TZ=UTC0?
+	[[ $TZ = ?(+|-)@(@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt])?(?(+|-)+(0|:))|+(0|:)) ]] && tz_utc=1  #is TZ=UTC0?
 
 	#if command `date' is available, get unix times from input string
 	if 	unix1=$(TZ=UTC0 datefun "${1:-+%s}" ${1:++%s}) &&
