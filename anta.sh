@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.19.3  mar/2022  by mountaineerbr
+# v0.19.4  mar/2022  by mountaineerbr
 
 #padrões
 
@@ -143,12 +143,6 @@ GARANTIA E REQUISITOS
 
 
 NOTAS E BUGS
-	Ao encanar a saída para um paginador como o \`Less' manualmente
-	ou ativar a opção -l do script em conjunto com a opção \`-r', buff-
-	eres do sistema não irá permitir que o script rode continuamente.
-	Para deixar o script rodando por tempo indefinido com a opção \`-r',
-	redirecione a saída para um arquivo.
-
 	Observe que se uma nova notícia for publicada durante o funciona-
 	mento do programa ao baixar múltiplas páginas contíguas, irá
 	perder-se algum número de reportagens pois elas são rolantes.
@@ -158,8 +152,7 @@ NOTAS E BUGS
 	vidores alternativos podem demorar um pouco para sincronizarem
 	com o servidor padrão.
 	
-	Wget 1.21.2 imprime mensagens de \`SSL_INIT' espúrias em stderr,
-	consertado na versão seguinte.
+	Wget 1.21.2 imprime mensagens de \`SSL_INIT' espúrias em stderr.
 
 
 VEJA TAMBÉM
@@ -190,7 +183,7 @@ EXEMPLOS DE USO
 
 		$ anta.sh -fr | less
 
-		$ anta.sh -fr >anta.txt
+		$ anta.sh -frl
 
 
 	( 4 ) Textos completos dos artigos das primeiras 4 páginas
@@ -238,7 +231,7 @@ OPÇÕES
 	-f [ÍNDICE..|URL..]
 		  Texto integral dos artigos das páginas iniciais.
 	-h 	  Mostra esta ajuda.
-	-l 	  Encanar saída para o paginador Less (nota na seção de bugs).
+	-l 	  Encanar saída para o paginador Less.
 	-p NUM    Número de páginas a serem puxadas; padrão=1 .
 	-r 	  Reacessar a página inicial em intervalos de tempo.
 	-s NUM    Intervalo de tempo entre reacessos da opção -r ; 
@@ -376,7 +369,7 @@ cerrf()
 
 # Cheque por update
 updatef() {
-	trap updatecleanf EXIT TERM INT
+	trap cleanf EXIT TERM INT
 	TMPFILE=$(mktemp)
 
 	#download script from url
@@ -384,7 +377,7 @@ updatef() {
 
 	#check diff
 	if diff "$SCRIPT" "$TMPFILE" &>/dev/null; then
-		echo 'anta.sh: aviso: o script está atualizado'
+		echo 'anta.sh: o script está atualizado'
 		((UPOPT<2))
 	else
 		#check if the two files headers are a bash SHEBANG
@@ -406,11 +399,12 @@ updatef() {
 	fi
 }
 #update clean up
-updatecleanf() { 
+cleanf() { 
 	#disable trap
 	trap \  EXIT TERM INT
-	[[ -e "$TMPFILE" ]] && rm "$TMPFILE"
-	exit
+	[[ -e "$TMPFILE" ]] && rm -- "$TMPFILE"
+	pkill -P $$
+	exit $RET
 }
 
 # Puxar páginas iniciais e testar por erros;
@@ -774,7 +768,7 @@ do
 			FULLOPT=1
 			;;
 		h) 	#Help
-			HELPOPT=1
+			echo "$HELP" ;exit
 			;;
 		l) 	#use the Less pager
 			OPTL=1
@@ -799,13 +793,6 @@ do
 	esac
 done
 shift $((OPTIND -1))
-#chamar algumas opções
-if ((HELPOPT))
-then 	if ((OPTL))
-	then 	echo "$HELP" | less
-	else 	echo "$HELP"
-	fi ;exit 0
-fi
 
 # Test if cURL and Wget are available
 if command -v curl &>/dev/null
@@ -855,12 +842,15 @@ if [[ "$*" = */* ]]; then
 elif [[ "$*" = +([0-9\ ]) ]]; then
 	echo 'anta.sh: índice detectado' >&2
 	ONLYONE=1
-	#unset ROLLOPT
 fi
 
 #selecionar opção
-if ((OPTL))
-then 	selectf "$@" | less -B -b4096
+if ((OPTL && ROLLOPT))
+then 	trap cleanf EXIT TERM INT
+	TMPFILE=$(mktemp) && echo "anta.sh: temp file -- $TMPFILE" >&2
+	selectf "$@" > "$TMPFILE" & tail -f "$TMPFILE" | less
+elif ((OPTL))
+then 	selectf "$@" | less
 else 	selectf "$@"
 fi
 exit $RET
