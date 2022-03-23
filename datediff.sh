@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.6  mar/2022  mountaineerbr  GPLv3+
+# v0.17.7  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -602,8 +602,8 @@ mainf()
 		pr2="${yearB}-${monthB}-${dayB}T${hourB}:${minB}:${secB}" pr2="${pr2%%*([$SEP])}"
 		printf '%s%s\n%s%s%s\n%s%s%s\n%s\n'  \
 			DATES "${neg_range:+*}"  \
-			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" "${unix1:+$'\t'}" "${unix1_pr:-$unix1}"  \
-			"${date2_iso8601_pr:-${date2_iso8601:-${pr2:-$inputB}}}" "${unix2:+$'\t'}" "${unix2_pr:-$unix2}"  \
+			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" ''${unix1:+$'\t'} "${unix1_pr:-$unix1}"  \
+			"${date2_iso8601_pr:-${date2_iso8601:-${pr2:-$inputB}}}" ''${unix2:+$'\t'} "${unix2_pr:-$unix2}"  \
 			RANGES
 	fi
 	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
