@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.8  mar/2022  mountaineerbr  GPLv3+
+# v0.17.9  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -729,7 +729,7 @@ then 	OPTT=1 OPTVERBOSE=2 OPTLAYOUT=
 		[wW]) 	OPTTw=1;;
 		[dD]) 	OPTTd=1;;
 		[hH]) 	OPTTh=1;;
-		[mm]) 	OPTTm=1;;
+		[mM]) 	OPTTm=1;;
 		[sS]) 	OPTTs=1;;
 	esac ;set -- "${@:1:$#-1}"
 fi ;unset opt
