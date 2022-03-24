@@ -1,6 +1,6 @@
 #!/bin/bash
 # anta.sh -- puxa artigos da homepage de <oantagonista.com>
-# v0.19.4  mar/2022  by mountaineerbr
+# v0.19.5  mar/2022  by mountaineerbr
 
 #padrões
 
@@ -20,8 +20,8 @@ SCRIPT="${BASH_SOURCE[0]}"
 FLOOD=0.4
 
 #update url
-UPURL=https://raw.githubusercontent.com/mountaineerbr/scripts/master/anta.sh
-#<https://raw.githubusercontent.com/mountaineerbr/mountaineerbr.github.io/master/repo/scripts/anta.sh>#
+#UPURL=https://raw.githubusercontent.com/mountaineerbr/scripts/master/anta.sh
+UPURL=https://gitlab.com/mountaineerbr/scripts/-/raw/main/anta.sh
 
 #date regex
 DREGEX='[0-3][0-9]\.[0-1][0-9]\.[1-2][0-9].*[0-2][0-9]:[0-5][0-9]'
@@ -459,7 +459,7 @@ anta() {
 		fi
 
 		#imprime a página e processa
-		POSTS="$( <<<"$PAGE" sed -nE '/<div id="p[0-9]+"/,/id="mais-lidas"/ p' | sed  '$d' | sed -n '/<article.*/,/<\/article/ p' )"
+		POSTS="$( <<<"$PAGE" sed -nE '/<div id="p[0-9]+"/,/id="mais-lidas"/ p' | sed -e '/<script/,/<\/script/d' -e '$d' | sed -n '/<article.*/,/<\/article/ p' )"
 
 		#continue if $OLDPOSTS and $POSTS are the same (-r OPTION)
 		if ((ROLLOPT)) && [[ "$POSTS" = "$OLDPOSTS" ]]

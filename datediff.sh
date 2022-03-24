@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.7  mar/2022  mountaineerbr  GPLv3+
+# v0.17.8  mar/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -140,7 +140,7 @@ EXAMPLES
 
 OPTIONS
 	-[0-9] 	Set scale for single unit ranges.
-	-ddd 	Debugging modes.
+	-dd 	Debugging modes.
 	-f FMT 	Input time format string; only with BSD \`date'.
 	-h 	Print this help page.
 	-l YEAR	Check if YEAR is leap year; YEAR format: YYYY.
@@ -159,7 +159,6 @@ OPTIONS
 #DEBUGGING
 #debug sets TZ=UTC0 and disables verbose mode switches, so most code is run.
 #debug two or more (-dd): set exit signal from debug test against `datediff' and `date' unix time.
-#debug three or more (-ddd): does not set TZ=UTC0.
 
 #TESTING RESULTS
 #TESTING SCRIPT: <https://pastebin.com/27RjhjCH>.
