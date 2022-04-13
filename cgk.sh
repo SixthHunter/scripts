@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cgk.sh -- coingecko.com api access
-# v0.18.1  jan/2021  by mountaineerbr
+# v0.18.2  jan/2021  by mountaineerbr
 # requires jq and curl/wget
 
 #defaults
@@ -845,7 +845,9 @@ changecf()
 	#try to match in currency list
 	elif 
 		if [[ "$vsto" = vs ]]
-		then 	grepid=( $(jq -er ".[]|select(.symbol == \"${symbol}\")|.id" "$CGKTEMPLIST1") )
+		then 	[[ ${symbol} != bitcoin ]] &&
+			! jq -er ".[]|select(.id == \"${symbol}\")" "$CGKTEMPLIST1" &>/dev/null &&
+		 	grepid=( $(jq -er ".[]|select(.symbol == \"${symbol}\")|.id" "$CGKTEMPLIST1") )
 		elif [[ \ "${FIATCODES[*]}"\  != *\ "$symbol"\ * ]]
 		then 	grepid=( $(jq -er ".[]|select(.id == \"${symbol}\")|.symbol" "$CGKTEMPLIST1") )
 			[[ \ "${FIATCODES[*]}"\  != *\ "${grepid[0]}"\ * ]] && unset grepid

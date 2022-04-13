@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.9  mar/2022  mountaineerbr  GPLv3+
+# v0.17.10  apr/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -606,7 +606,7 @@ mainf()
 			RANGES
 	fi
 	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
-	((OPTVERBOSE<2 || OPTVERBOSE>2)) && printf '%dY %02dM %02dW %02dD  %02dH %02dM %02dS\n' "${sh[@]}"
+	((OPTVERBOSE<2 || OPTVERBOSE>2)) && printf '%dY %02dM %02dW %02dD  %02dh %02dm %02ds\n' "${sh[@]}"
 
 	return ${ret:-0}
 }
