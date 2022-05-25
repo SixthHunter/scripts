@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.15.10  feb/2022  by castaway
+# v0.15.12  may/2022  by castaway
 
 #defaults
 #script name
@@ -15,33 +15,34 @@ DEFCALCREPOS=( core extra community multilib )
 
 ##default ala server
 #official ala archieve
-URL=https://archive.archlinux.org/packages
-URL2=https://archive.archlinux.org/repos
-URL3=https://archive.archlinux.org/iso
+URL=https://archive.archlinux.org
+## Archive mirrors
+## https://{europe,asia,america}.archive.pkgbuild.com
+#URL=https://america.archive.pkgbuild.com
 
-##arkena archieve servers -- use option -2
+## Misc servers (experimental)
+## Repo date from 07/2017; also has fewer packages
+##http://archive.virtapi.org
+## Chinese archive URL (only for some pkgs):
+##https://repo.archlinuxcn.org/x86_64
+##historical repo? hosted by ftp.nluug.nl:
+##http://ftp.vim.org/ftp/os/Linux/distr/archlinux
+##historical archive for very old arch isos:
+##http://skyward.fr/mirror/archlinux/archive/iso
+
+##arkena archieve servers -- option -2
 #good alternative archive url but often is down for short while:
-BURL=http://archlinux.arkena.net/archive/packages
-BURL2=http://archlinux.arkena.net/archive/repos
-BURL3=http://archlinux.arkena.net/archive/iso
+BURL=http://archlinux.arkena.net/archive
 
-#mirror server, this is not an archival server
+#mirror server, this is not an archival server -- option -3
 MURLDEF=http://archlinux.c3sl.ufpr.br
 #MURLDEF=http://ftp.gwdg.de/pub/linux/archlinux/
 
-#misc servers (experimental)
-#repo date from 07/2017; also has fewer packages
-#URL=http://archive.virtapi.org/packages
-#URL2=http://archive.virtapi.org/repos
-
-#chinese archive URL (only for some pkgs):
-#URL=https://repo.archlinuxcn.org/x86_64
-#URL2=
-
-#historical repo? hosted by ftp.nluug.nl:
-#http://ftp.vim.org/ftp/os/Linux/distr/archlinux
-#historical archive for very old arch isos:
-#http://skyward.fr/mirror/archlinux/archive/iso
+#define url complements
+URL=${URL%/}  BURL=${BURL%/}  MURL="${MURL:-$MURLDEF}"  MURL=${MURL%/}
+URL1=$URL/packages
+URL2=$URL/repos
+URL3=$URL/iso
 
 #cache directory
 #defaults=/tmp/ala.sh.cache
@@ -673,7 +674,7 @@ calcf() {
 				cachef 3 "$URLADD/$i/os/x86_64/${i}.db.tar.gz" |
 					tar --extract --wildcards -Ozf - '*/desc' |
 					sed -n '/%CSIZE%/{n;p}'
-			} ) )
+			} 2>/dev/null ) )
 			#bsdtar -xf - -O '*/desc'
 			
 			#sum sizes
@@ -965,7 +966,7 @@ searchf() {
 	#test if input is an index letter and set URLs
 	elif (( ${#1} == 1 )); then
 		#get data and set url
-		URLADD="$URL/$1/"
+		URLADD="$URL1/$1/"
 	else
 		#set date url
 		if [[ "$*" =~ ^[0-9\ /]+$ ]]
@@ -974,8 +975,8 @@ searchf() {
 		elif [[ "$1" = *[a-z]* ]]
 		then 	set -- "${1//-[0-9]*.*}"
 			#get data and set url
-			URLADD="$URL/${1:0:1}/$1/"
-		else 	URLADD="$URL/${*}/"
+			URLADD="$URL1/${1:0:1}/$1/"
+		else 	URLADD="$URL1/${*}/"
 			#return 1
 		fi
 	fi
@@ -1037,7 +1038,7 @@ allf() {
 	fi
 
 	#get the special .all
-	APKGS=$(cachef 0 "$URL/.all/index.0.xz" | unxz)
+	APKGS=$(cachef 0 "$URL1/.all/index.0.xz" | unxz)
 	UNXZ="${PIPESTATUS[0]}"  #$PIPESTATUS changes every new cmd
 	echo >&2
 
@@ -1049,7 +1050,7 @@ allf() {
 	#print list and stats
 	echo "$APKGS" | sort -V
 	echo "Pkgs: $(wc -l <<<"$APKGS")"
-	echo "<$URL/.all>"
+	echo "<$URL1/.all>"
 }
 
 #-n arch news feed
@@ -1179,9 +1180,9 @@ do
 			;;
 		2) #try arkena archives, a good alternative archive url
 		      #but is down for short while
-			URL="$BURL"
-			URL2="$BURL2"
-			URL3="$BURL3"
+			URL1=$BURL/packages
+			URL2=$BURL/repos
+			URL3=$BURL/iso
 			;;
 		a) #list all pkgs
 			ALLOPT=1
@@ -1257,8 +1258,6 @@ fi
 #make a cache directory
 [[ -d "$CACHEDIR" ]] || mkdir -- "$CACHEDIR" || exit
 
-#-3 set mirror url or defaults
-MURL="${MURL:-$MURLDEF}"
 #set the default html filter
 WBROWSER=( "${WBROWSERDEF[@]}" )
 
