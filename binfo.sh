@@ -1,6 +1,6 @@
 #!/bin/bash
 # binfo.sh -- bitcoin blockchain explorer for bash
-# v0.9.20  jun/2021  by mountaineerbr
+# v0.9.22  jun/2021  by mountaineerbr
 
 #defaults
 
@@ -360,11 +360,6 @@ blkinfof() {
 		"         \(.miners_revenue_usd|round) USD",
 		"TotFees: \(.total_fees_btc/100000000) BTC",
 		"",
-		"FeeVol% (TotFees/Revenue):",
-		"  \(((.total_fees_btc/100000000)/.miners_revenue_btc)*100 | tostring | .[0:5]) %",
-		"RevenueVol% (Revenue/EstVol):",
-		"  \((.miners_revenue_btc/(.estimated_btc_sent/100000000))*100 | tostring | .[0:5]) %",
-		"",
 		"Market",
 		"Price__: \(.market_price_usd) USD",
 		"TxVol__: \(.trade_volume_btc) BTC (\(.trade_volume_usd|round) USD)",
@@ -373,6 +368,11 @@ blkinfof() {
 		"@Height: \(.nextretarget)",
 		"Blocks_: -\(.nextretarget-.n_blocks_total)",
 		"Days___: -\((.nextretarget-.n_blocks_total)*.minutes_between_blocks/(60*24)| tostring | .[0:4])"' <<< "$CHAINJSON"
+		#"FeeVol% (TotFees/Revenue):",
+		#"  \(((.total_fees_btc/100000000)/ (if .miners_revenue_btc == 0 then 1 else . end) )*100 | tostring | .[0:5]) %",
+		#"RevenueVol% (Revenue/EstVol):",
+		#"  \((.miners_revenue_btc/(.estimated_btc_sent/100000000))*100 | tostring | .[0:5]) %",
+		#"",
 
 	#some more stats
 	printf '\nMempool (unconfirmed txs)\n'
