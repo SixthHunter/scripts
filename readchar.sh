@@ -1,23 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # read user input, check for invalid chars and compose a string
 # by mountaineerbr
 
-#references
-#original post:
 #https://www.vivaolinux.com.br/topico/Shell-Script/Interrompendo-um-loop-while/?pagina=1
-#help:
 #https://www.unix.com/unix-for-dummies-questions-and-answers/130800-how-test-backspace.html
-
-#if used as shell function, set:
-#local clrline code string REPLY
-
-#clear line code
-clrline='\033[2K'
+#ascii table: https://www.physics.udel.edu/~watson/scen103/ascii.html
 
 while true
 do
 	#visual feedback
-	printf "\r${clrline}Input: %s" "${string:-(empty)}" >&2
+	printf "\r\033[2KInput: %s" "${string:-(empty)}" >&2
 
 	#user input, read one char at a time
 	read -r -n 1
@@ -27,7 +19,7 @@ do
 		#check for backspace literal code
 		#printf %x "'$REPLY"  #returns '7f'
 		code="$( printf %d "'$REPLY" )"
-		(( code == 127 ))
+		((code==127||code==8))
 	then
 		#if $string is not empty, remove last char
 		(( ${#string} )) &&
@@ -36,7 +28,7 @@ do
 		#check for illegal chars (arbitrary)
 		[[ "$REPLY" = [^a-zA-Z0-9\ ._-] ]]
 	then
-		printf "\r${clrline}Illegal char -- %s" "$REPLY" >&2
+		printf "\r\033[2KIllegal char -- %s" "$REPLY" >&2
 		sleep 0.5
 	elif
 		#if $REPLY is empty (Enter = Newline)
