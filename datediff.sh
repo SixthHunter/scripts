@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.17.10  apr/2022  mountaineerbr  GPLv3+
+# v0.18  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -14,13 +14,14 @@ SYNOPSIS
 
 
 DESCRIPTION
-	Calculate time ranges between DATE1 and DATE2.
+	Calculate time ranges between DATE1 and DATE2 or check for leap
+	years. The \`date' programme is run to process dates if available.
 
+	\`GNU date' accepts mostly free format human readable date strings.
 	Input DATE strings must be ISO-8601 \`%Y-%m-%dT%H:%M:%S' if using
 	\`FreeBSD date' unless option \`-f FMT' is set to a new input time
-	format. \`GNU date' accepts mostly free format human readable date
-	strings. If \`date' is not available then input must be in ISO-8601
-	format.
+	format. If \`date' programme is not available then input must be
+	ISO-8601 formatted.
 
 	If DATE is not set, defaults to \`now'. To flag DATE as UNIX time,
 	prepend an at sign \`@' to it or set option -r. Stdin input sup-
@@ -33,10 +34,10 @@ DESCRIPTION
 	seconds alone). It also displays a compound time range with all
 	the above units into consideration to each other.
 
-	Single unit time ranges can be displayed in table format (-V) and
-	scale set with -NUM where NUM is an integer. When last positional
-	parameter UNIT is exactly one of \`y', \`mo', \`w', \`d', \`h',
-	\`m' or \`s', a single UNIT range is printed.
+	Single UNIT time ranges can be displayed in table format (-V) and
+	their scale set with -NUM where NUM is an integer. When last posi-
+	tional parameter UNIT is exactly one of \`y', \`mo', \`w', \`d',
+	\`h', \`m' or \`s', only a single UNIT range is printed.
 
 	Output DATE section prints two dates in ISO-8601 format or, if
 	option -R is set, RFC-5322 format.
@@ -45,24 +46,26 @@ DESCRIPTION
 	option -v to decrease verbose and modify output layout. Gregorian
 	calendar is assumed. No leap seconds.
 
-	Timezone is read from environment \$TZ by the \`date' programme.
-	Timezone features are only available with GNU or FreeBSD \`date'.
+	Offset in ISO-8601 DATES (up to seconds) is supported throughout
+	this script even when \`date' package is not available.
+
+	Environment \$TZ is read by GNU or FreeBSD \`date' programmes only.
+	Timezone names and IDs may only be supported by \`date' package.
 
 
 ENVIRONMENT
-	TZ 	Sets timezone name, read by \`date' programme; UTC0 is
-		always set for main calculations and debugging.
+	TZ 	Set timezone name, read by BSD and GNU \`date' programmes.
 
 
 REFINEMENT RULES
-	Some date ranges can be calculated in various forms for the
-	\`compound time range' display. We decided to mimic hroptatyr's
-	\`datediff' refinement rules as often as possible but may do
-	differently (however correctly).
+	Some date ranges can be calculated in more than one way depending
+	on the logic used in the \`compound time range' display. We de-
+	cided to mimic hroptatyr's \`datediff' refinement rules as often
+	as possible.
 
 	Script error rate is estimated to be lower than one percent after
-	extensive testing with selected and corner-case sample dates.
-	Check script source code for details.
+	extensive testing with selected and corner-case sample dates and
+	times. Check script source code for details.
 
 
 SEE ALSO
@@ -98,7 +101,7 @@ WARRANTY
 	software is distributed without support or bug corrections.
 
 	Bash2.05b+ is required. \`Bc' is required for single-unit calcula-
-	tions. GNU or FreeBSD12.0+ \`date' is optionally required.
+	tions. FreeBSD12.0+ or GNU \`date' is optionally required.
 
 
 EXAMPLES
@@ -135,61 +138,70 @@ EXAMPLES
 	$ ${0##*/} -r 1561243015 1592865415
 	$ ${0##*/}  200002280910.33  0003290010.00
 	$ ${0##*/} -- '-v +2d' '-v -3w'
-	$ ${0##*/}  2021-12-31T21:00:10  21:00:10-03
+	$ ${0##*/}  2021-12-31T21:00:10+00:00  21:00:10-03:20
 
 
 OPTIONS
 	-[0-9] 	Set scale for single unit ranges.
-	-dd 	Debugging modes.
-	-f FMT 	Input time format string; only with BSD \`date'.
+	-Ddd 	Debug modes (check source code for info).
+	-f FMT 	Input time format string (only with BSD \`date').
 	-h 	Print this help page.
-	-l YEAR	Check if YEAR is leap year; YEAR format: YYYY.
+	-l YEAR	Check if YEAR is leap year (YEAR format: YYYY).
 	-R 	Print human time in RFC-5322 format (verbose).
 	-r, -@ 	Input DATES are UNIX times.
-	-u 	Print in local time (mind environment \$TZ).
-	-VV 	Set table layout display of single unit ranges.
+	-u 	Local time instead of UTC0.
+	-VV 	Table layout display of single unit ranges.
 	-vvv 	Less verbose."
 
-#WHAT TO EXPECT FROM VERBOSE AND DEGUB FLAGS
+#OPTION DETAILS
 #VERBOSE
 #no verbose option, print date1 and date2 in results, as well as unix times when available.
-#toggle verbose with option -v.
-#verbose less than 3 (-v and -vv): run `date' and `bc'; print single unit ranges.
-#verbose less than 2 and more than 2 (-v and -vvv): print compound range.
-#DEBUGGING
+#verbose (-v and -vv): run `date' and `bc'; print single unit ranges.
+#verbose (-v and -vvv): print compound range.
+#
+#DEBUGGING -D
+#disable `date' programme warping.
+#
+#DEBUGGING -dd
 #debug sets TZ=UTC0 and disables verbose mode switches, so most code is run.
-#debug two or more (-dd): set exit signal from debug test against `datediff' and `date' unix time.
+#debug (-d): check results against `datediff' and `date', print only when results differ.
+#debug (-dd): set exit code and exit.
+
 
 #TESTING RESULTS
-#TESTING SCRIPT: <https://pastebin.com/27RjhjCH>.
+#MAIN TESTING SCRIPT: <https://pastebin.com/27RjhjCH>.
 #Hroptatyr's `man datediff' says ``refinement rules'' cover over 99% cases.
 #Calculated `datediff' error rate is at least .00311 (0.3%) of total tested dates (compound range).
 #Results differ from `datediff' in .006275 (0,6%) of all tested dates in script version v0.16.8 (compound range).
 #All differences occur with ``end-of-month vs. start-of-month'' dates, such as days `29, 30 or 31' of one date against days `1, 2 or 3' of the other date.
 #Different results from `datediff' in compound range are not necessarily errors in all cases and may be considered correct albeit with different refinements. This seem to be the case for most, if not all, differences obtained in testing results.
-#No errors were found in range (seconds) calculation and thus single-unit results should all be correct.
+#No errors were found in range (seconds) calculation, thus single-unit results should all be correct.
+#
+#OFFSET TESTING SCRIPT: <https://pastebin.com/1PjMh2hG>
+#note `datediff' offset is limited to between -14h and +14h!
+#all offset-aware date results passed checking against `datediff'.
+#
+#This script was tested with Bash 5.1. It *should run* with Bash2.05b+.
 
 #NOTES
 ##Time zone / Offset support
 #dbplunkett: <https://stackoverflow.com/questions/38641982/converting-date-between-timezones-swift>
-#Time zone talk is a complicated business, leave it for `date' programme!
-#could only support case statement for UTC/UTC0 and GMT to set TZ=+00:00;
+#time zone talk is a complicated business, leave it for `date' programme!
 #-00:00 and +24:00 are valid and should equal to +00:00;
-#how to care for environment $TZ and input date string with timezone?
 #support up to `seconds' for time zone adjustment; POSIX time does not account for leap seconds;
-#POSIX defines time zone by the $TZ variable which takes a different form from ISO8601 standards;
-#we should not bother to support offsets, std (standard) or dst (daylight saving time) in timezones;
-#see: <https://www.iana.org/time-zones>
-#may be easier to support OFFSET instead of TIME ZONE, see distinction:
+#POSIX time zone definition by the $TZ variable takes a different form from ISO8601 standards; environment $TZ applies to both dates;
+#we should not support $TZ, std (standard) or dst (daylight saving time) in timezones, only offsets;
+#may be easier to support OFFSET instead of TIME ZONE.
+# America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name. see:
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
-#America/Sao_Paulo is a timezone ID, not a name. `Pacific Standard Time' is a tz name
-#
-#This script was tested with Bash 5.1. It *should run* with Bash2.05b+.
+#<https://www.iana.org/time-zones>, <https://www.w3.org/TR/NOTE-datetime>
+#<https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html>
 
 
 #globs
 SEP='Tt/.:+-'
 GLOBOPT='@(y|mo|w|d|h|m|s|Y|MO|W|D|H|M|S)'
+GLOBUTC='?(+|-)@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt]|Z|z)'
 GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
 GLOBTIME='@(2[0-4]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9])?(:?([0-5])[0-9]))'
 #https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
@@ -197,14 +209,13 @@ GLOBTIME='@(2[0-4]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-4]|
 YEAR_MONTH_DAYS=(31 28 31 30 31 30 31 31 30 31 30 31)
 TIME_ISO8601_FMT='%Y-%m-%dT%H:%M:%S%z'
 #TIME_RFC5322_FMT='%a, %d %b %Y %H:%M:%S %z'
-#TIME_CUSTOM_FMT='%d/%b/%Y %H:%M:%S'
 #`BSD date' input time format defaults:
 INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S - no timezone
+
 
 # Choose between GNU or BSD date
 # datefun.sh [-u|-R|-v[val]|-I[fmt]] [YYY-MM-DD|@UNIX] [+OUTPUT_FORMAT]
 # datefun.sh [-u|-R|-v[val]|-I[fmt]]
-#
 # By defaults, input should be UNIX time (append @) or ISO8601 format.
 # Option -I `fmt' may be `date', `hours', `minutes' or `seconds' (added in FreeBSD12.0).
 # Setting environment TZ=UTC0 is equivalent to -u. 
@@ -233,7 +244,7 @@ datefun()
 		"${DATE_CMD[@]}" ${options} "$@"
 	fi
 }
-#test whether BSD or GNU date is available
+#test for BSD or GNU date
 if DATE_CMD=(date); ! date --version
 then 	if gdate --version
 	then 	DATE_CMD=(gdate)
@@ -258,8 +269,7 @@ month_maxday()
 
 #check how many days in a year; print number of days of a year.
 #year_days()
-#{
-#	local month year
+#{ 	local month year
 # 	month="$1" year="$2"
 #	if (( !(year % 4) && ( year % 100 || !(year % 400) ) ))
 #	then 	echo 366
@@ -284,7 +294,7 @@ isleap()
 	local year
 	#year=${1//[$IFS]}
 	year=${1#[+-]} year=${year#"${year%%[!0]*}"}
-	year="${year%%[!0-9]*}" ;[[ ${1} = -?* ]] && year=-$year  #beware of $IFS!
+	year="${year%%[!0-9]*}" ;[[ $1 = -?* ]] && year=-$year
 	if 	[[ $year = ?(-)+([0-9])* ]]
 	then
 		if (( !(year % 4) && ( year % 100 || !(year % 400) ) ))
@@ -300,25 +310,20 @@ isleap()
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA yearB monthB dayB hourB minB secB tzB ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_y range_mo range_w range_d range_h range_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save d_sum unix1_pr unix2_pr date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check monthAMax monthBMax tz_utc now varname var ar n r SS SSS
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf offset_unsort yearA monthA dayA hourA minA secA tzA neg_tzA tzAh tzAm tzAs yearB monthB dayB hourB minB secB tzB neg_tzB tzBh tzBm tzBs ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_y range_mo range_w range_d range_h range_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save d_sum date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check now varname var ar n r SS SSS
 
 	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
-	[[ $TZ = ?(+|-)@(@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt])?(?(+|-)+(0|:))|+(0|:)) ]] && tz_utc=1  #is TZ=UTC0?
 
 	#if command `date' is available, get unix times from input string
-	if 	unix1=$(TZ=UTC0 datefun "${1:-+%s}" ${1:++%s}) &&
-		unix2=$(TZ=UTC0 datefun "${2:-+%s}" ${2:++%s})
+	if 	unix1=$(datefun "${1:-+%s}" ${1:++%s}) &&
+		unix2=$(datefun "${2:-+%s}" ${2:++%s})
 	then 	{
-		date1_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix1")
-		date2_iso8601=$(TZ=UTC0 datefun -Iseconds @"$unix2")
-		if [[ ! $OPTVERBOSE$tz_utc ]]
-		then 	unix1_pr=$(datefun "${1:-+%s}" ${1:++%s})
-			unix2_pr=$(datefun "${2:-+%s}" ${2:++%s})
-		fi
-		if [[ ! $OPTVERBOSE && (! $tz_utc || $OPTRR) ]]
-		then 	date1_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix1_pr:-$unix1}")
-			date2_iso8601_pr=$(datefun ${OPTRR:--Iseconds} @"${unix2_pr:-$unix2}")
+		date1_iso8601=$(datefun -Iseconds @"$unix1")
+		date2_iso8601=$(datefun -Iseconds @"$unix2")
+		if [[ ! $OPTVERBOSE && $OPTRR ]]
+		then 	date1_iso8601_pr=$(datefun -R @"$unix1")
+			date2_iso8601_pr=$(datefun -R @"$unix2")
 		fi
 		}  2>/dev/null  #avoid printing errs with FreeBSD<12.0 `date'
 
@@ -326,31 +331,31 @@ mainf()
 		if ((unix1 > unix2))
 		then 	neg_range=-
 			date_buf="$unix1" unix1="$unix2" unix2="$date_buf"
-			date_buf="$unix1_pr" unix1_pr="$unix2_pr" unix2_pr="$date_buf"
 			date_buf="$date1_iso8601" date1_iso8601="$date2_iso8601" date2_iso8601="$date_buf"
 			date_buf="$date1_iso8601_pr" date1_iso8601_pr="$date2_iso8601_pr" date2_iso8601_pr="$date_buf"
 		fi
 	else 	unset unix1 unix2
 	fi
+	
 	#set default date -- AD
 	[[ ! $1 || ! $2 ]] && now=$(datefun -Iseconds  2>/dev/null) || now=0001-01-01
 	[[ ! $1 ]] && set -- "${now:0:19}" "${@:2}"
 	[[ ! $2 ]] && set -- "$1" "${now:0:19}" "${@:3}"
+
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}" inputA="${inputA//+(-)/-}" inputA="${inputA//+(+)/+}"
 	inputB="${date2_iso8601:-$2}" inputB="${inputB//+(-)/-}" inputB="${inputB//+(+)/+}"
 	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
-	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}  #validate test if `no' user input
+	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}
+	
 	#trim leading zeroes
-	for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
+	for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB
 	do 	eval "var=\"\$$varname\""
 	 	eval "$varname=\"${var#"${var%%[!0]*}"}\""
-	done
-	#https://www.oasys.net/fragments/leading-zeros-in-bash/
-	[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB  #negative year
+	done  #https://www.oasys.net/fragments/leading-zeros-in-bash/
 
-	#sort dates if unix times were not generated by `date' previously
+	#sort dates (if no `date' package)
 	if [[ ! $unix2 ]] &&
 		(( 	(yearA>yearB)
 			|| ( (yearA==yearB) && (monthA>monthB) )
@@ -359,31 +364,110 @@ mainf()
 			|| ( (yearA==yearB) && (monthA==monthB) && (dayA==dayB) && (hourA==hourB) && (minA>minB) )
 			|| ( (yearA==yearB) && (monthA==monthB) && (dayA==dayB) && (hourA==hourB) && (minA==minB) && (secA>secB) )
 		))
-	then 	#swap dates
-		neg_range=-
+	then 	neg_range=-
 		inputA="${date2_iso8601:-$2}" inputA="${inputA//+(-)/-}" inputA="${inputA//+(+)/+}"
 		inputB="${date1_iso8601:-$1}" inputB="${inputB//+(-)/-}" inputB="${inputB//+(+)/+}"
-		set -- "$2" "$1" "${@:3}"
 		IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA tzA <<<"${inputA#[+-]}"
 		IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB tzB <<<"${inputB#[+-]}"
 		monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}
-		for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB  #tzA tzB
+		
+		for varname in yearA monthA dayA hourA minA secA  yearB monthB dayB hourB minB secB
 		do 	eval "var=\"\$$varname\""
 	 		eval "$varname=\"${var#"${var%%[!0]*}"}\""
 		done
-		[[ $inputA = -?* ]] && yearA=-$yearA ;[[ $inputB = -?* ]] && yearB=-$yearB
+		set -- "$2" "$1" "${@:3}"
 	fi
+
 	#check input validity
-	if 	monthAMax=$(month_maxday "$monthA" "$yearA")
-		monthBMax=$(month_maxday "$monthB" "$yearB")
-		! ((yearA && yearB && monthA && monthB && dayA && dayB)) ||
+	date1_month_max_day=$(month_maxday "$monthA" "$yearA")
+	date2_month_max_day=$(month_maxday "$monthB" "$yearB")
+	if ! ((yearA && yearB && monthA && monthB && dayA && dayB)) ||
 		((
-			monthA>12 || monthB>12 || dayA>monthAMax || dayB>monthBMax
+			monthA>12 || monthB>12 || dayA>date1_month_max_day || dayB>date2_month_max_day
 			|| hourA>24 || hourB>24 || minA>60 || minB>60 || secA>60 || secB>60
 		))
 	then 	echo "err: illegal user input" >&2 ;return 2
 	fi
-	[[ ! $unix2$OPTVERBOSE && $tzA$tzB ]] && echo "warning: time zone supported only by \`date' package!" >&2
+
+	tzA="${tzA//[$IFS]}"
+	tzB="${tzB//[$IFS]}"
+	#negative years, negative offsets
+	[[ $inputA = -?* ]] && yearA=-$yearA
+	[[ $inputB = -?* ]] && yearB=-$yearB
+	[[ ${inputA%"${tzA##$GLOBUTC?([+-])}"} = *?- ]] && neg_tzA=-
+	[[ ${inputB%"${tzB##$GLOBUTC?([+-])}"} = *?- ]] && neg_tzB=-
+	tzA="$neg_tzA${tzA#*$GLOBUTC}"  #remove `UTC' from string
+	tzB="$neg_tzB${tzB#*$GLOBUTC}"
+
+	#offset support
+	if [[ ${tzA//[$SEP]}${tzB//[$SEP]} = +([0-9]) ]]
+	then
+		IFS="${IFS}${SEP}" read tzAh tzAm tzAs  var <<<"${tzA#[+-]}"
+		IFS="${IFS}${SEP}" read tzBh tzBm tzBs  var <<<"${tzB#[+-]}"
+		for varname in tzAh tzAm tzAs  tzBh tzBm tzBs
+		do 	eval "var=\"\$$varname\""
+			eval "$varname=\"${var#"${var%%[!0]*}"}\""
+		done
+		tzAh=$neg_tzA${tzAh:-0} ;tzBh=$neg_tzB${tzBh:-0}
+
+		#check offset validity
+		if ((tzAh>24 || tzBh>24 || tzAm>60 || tzBm>60 || tzAs>60 || tzBs>60))
+		then 	echo "warning: illegal offset!" >&2
+			unset tzA tzB tzAh tzBh tzAm tzBm tzAs tzBs
+		fi  #offset specs:
+		#<https://www.w3.org/TR/NOTE-datetime>
+		#<https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html>
+
+		#offset sorting
+		if (( 	(tzAh>tzBh)
+			|| ( (tzAh==tzBh) && ( (tzAh>=0) ? (tzAm>tzBm) : (tzAm<tzBm) )  )
+			|| ( (tzAh==tzBh) && (tzAm==tzBm) && ( (tzAh>=0) ? (tzAs>tzBs) : (tzAs<tzBs) )  )
+		))
+		then 	offset_unsort=1
+			date_buf=$tzA tzA=$tzB tzB=$date_buf
+			date_buf=$tzAh tzAh=$tzBh tzBh=$date_buf
+			date_buf=$tzAm tzAm=$tzBm tzBm=$date_buf
+			date_buf=$tzAs tzAs=$tzBs tzBs=$date_buf
+		fi
+
+		((tzh=tzBh-tzAh))  #offsets must be sorted!!!
+		if ((tzAh>=0 && tzBh>=0))      #always negative results
+		then 	if ((tzAh==tzBh))
+			then 	((tzm=tzAm-tzBm))
+				if ((tzAm==tzBm))
+				then 	((tzs=tzAs-tzBs))
+				else 	#((tzs=-60+tzAs-tzBs))
+					((tzs=-60+( (tzAs>0) ? (tzAs>=60 ? tzAs+60 : tzAs) : 60)-tzBs))
+				fi
+			else 	((tzm=-60+( tzAm>0 ? (tzAm>=60 ? tzAm+60 : tzAm) : 60)-tzBm))
+			 	((tzs=-60+( tzAs>0 ? (tzAs>=60 ? tzAs+60 : tzAs) : 60)-tzBs))
+			fi
+		elif ((tzAh<=0 && tzBh<=0))    #always positive results
+		then 	if ((tzAh==tzBh))
+			then 	((tzm=tzAm-tzBm))
+				if ((tzAm==tzBm))
+				then 	((tzs=tzAs-tzBs))
+				else 	((tzs=60-( (tzBs>0) ? (tzBs>=60 ? tzBs+60 : tzBs) : 60)+tzAs))
+				fi
+			else 	((tzm=60-( tzBm>0 ? (tzBm>=60 ? tzBm+60 : tzBm) : 60)+tzAm))
+				((tzs=60-( (tzBs>0) ? (tzBs>=60 ? tzBs+60 : tzBs) : 60)+tzAs))
+			fi
+		else 	#((tzAh<0 && tzBh>0))  #positive/negative results
+			((tzm=tzAm+tzBm))
+			((tzs=tzAs+tzBs))
+		fi
+
+		if ((offset_unsort))
+		then 	date_buf=$tzA tzA=$tzB tzB=$date_buf
+			date_buf=$tzAh tzAh=$tzBh tzBh=$date_buf
+			date_buf=$tzAm tzAm=$tzBm tzBm=$date_buf
+			date_buf=$tzAs tzAs=$tzBs tzBs=$date_buf
+		fi
+	elif [[ ! $unix2$OPTVERBOSE && ${tzA//[$SEP]}${tzB//[$SEP]} = +([A-Za-z]) ]]
+	then 	echo "warning: timezone support requires \`date' package!" >&2
+		unset tzA tzB tzAh tzBh tzAm tzBm tzAs tzBs
+	else 	unset tzA tzB tzAh tzBh tzAm tzBm tzAs tzBs
+	fi  #``offset is *from* UTC''. environment $TZ applies to both DATES.
 
 
 	##Count leap years and sum leap and non leap years days,
@@ -424,7 +508,7 @@ mainf()
 
 	#some info about input dates and their context..
 	date3_month_max_day=$(month_maxday "$((monthB==1 ? 12 : monthB-1))" "$yearB")
-	date1_month_max_day=$(month_maxday "$monthA" "$yearA")
+	#date1_month_max_day=$(month_maxday "$monthA" "$yearA")
 	date1_year_days_adj=$(year_days_adj "$monthA" "$yearA")
 
 
@@ -478,7 +562,7 @@ mainf()
 	fi
 
 
-	((h += (24-hourA)+hourB))
+	((h += (24-hourA)+hourB)) ;((h += tzh))
 	if ((h<24))
 	then 	if ((!h))
 		then 	:
@@ -492,7 +576,7 @@ mainf()
 	else 	((h %= 24))
 	fi
 
-	((m += (60-minA)+minB))
+	((m += (60-minA)+minB)) ;((m += tzm))
 	if ((m<60))
 	then 	if ((!m))
 		then 	:
@@ -508,7 +592,7 @@ mainf()
 	else 	((m %= 60))
 	fi
 
-	((s = (60-secA)+secB))
+	((s = (60-secA)+secB)) ;((s += tzs))
 	if ((s<60))
 	then 	if ((!s))
 		then 	:
@@ -537,14 +621,14 @@ mainf()
 
 
 	#total sum of full days
-	#if [[ $unix2 ]]  #prefer `date' unix times for range if available?
+	#if [[ $unix2 ]]  #prefer `date' unix time range?
 	#then 	((range = unix2-unix1))
 	#else
 		((d_sum = (  (d_left_save) + (fullmonth_days + daycount_years + daycount_leap_years)  ) ))
 		((range = (d_sum * 3600 * 24) + (h * 3600) + (m * 60) + s))
 	#fi
 
-	#single unit time ranges when `bc' is available (ensure `bc' is available)
+	#single unit time ranges (when `bc' is available)
 	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) &&
 		range_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
 		} || ((OPTT))
@@ -555,7 +639,7 @@ mainf()
 		((!OPTT||OPTTh)) && range_h=$(bc <<<"scale=${SCL}; ${range:-0} / 3600")
 		((!OPTT||OPTTm)) && range_m=$(bc <<<"scale=${SCL}; ${range:-0} / 60")
 
-		#print layout of single units
+		#set layout of single units
 		if ((! OPTLAYOUT || OPTT))
 		then 	#layout one
 			prHelpf $range_y && range_print="$range_y year$SS"
@@ -591,18 +675,23 @@ mainf()
 	# Debugging
 	if ((DEBUG))
 	then
-		#!#
-		debugf "$@"
+		#!# 
+		debugf "$@" || return
 	fi
 	
 	#print results
 	if ((!OPTVERBOSE))
-	then 	pr1="${yearA}-${monthA}-${dayA}T${hourA}:${minA}:${secA}" pr1="${pr1%%*([$SEP])}"
-		pr2="${yearB}-${monthB}-${dayB}T${hourB}:${minB}:${secB}" pr2="${pr2%%*([$SEP])}"
+	then
+		[[ $tzA && ! $unix2 ]] && pr1off="${tzAh:-0}:${tzAm:-0}:${tzAs:-0}" pr1off="${pr1off%%*([:+-]0)}"
+		[[ $tzB && ! $unix2 ]] && pr2off="${tzBh:-0}:${tzBm:-0}:${tzBs:-0}" pr2off="${pr2off%%*([:+-]0)}"
+		[[ ${tzA:--} != -* ]] && pr1off=${pr1off:++}$pr1off ;[[ ${tzB:--} != -* ]] && pr2off=${pr2off:++}$pr2off
+		pr1="${yearA}-${monthA}-${dayA}T${hourA:-${pr1off:+0}}:${minA:-${pr1off:+0}}:${secA:-${pr1off:+0}}${pr1off}"
+		pr2="${yearB}-${monthB}-${dayB}T${hourB:-${pr2off:+0}}:${minB:-${pr2off:+0}}:${secB:-${pr2off:+0}}${pr2off}"
+		pr1="${pr1%%*([$SEP])}" pr2="${pr2%%*([$SEP])}"
 		printf '%s%s\n%s%s%s\n%s%s%s\n%s\n'  \
 			DATES "${neg_range:+*}"  \
-			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" ''${unix1:+$'\t'} "${unix1_pr:-$unix1}"  \
-			"${date2_iso8601_pr:-${date2_iso8601:-${pr2:-$inputB}}}" ''${unix2:+$'\t'} "${unix2_pr:-$unix2}"  \
+			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" ''${unix1:+$'\t'} "$unix1"  \
+			"${date2_iso8601_pr:-${date2_iso8601:-${pr2:-$inputB}}}" ''${unix2:+$'\t'} "$unix2"  \
 			RANGES
 	fi
 	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
@@ -616,9 +705,10 @@ mainf()
 debugf()
 {
 		#check compound time range against `date' and DATE against `datediff/ddiff'
-		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${inputA:0:19}" "${inputB:0:19}") || ((ret+=250))
+		#`datediff' offset is limited between -14h and +14h!
+		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "${inputA:0:25}" "${inputB:0:25}") || ((ret+=250))
 		read y_dd mo_dd w_dd d_dd  h_dd m_dd s_dd <<<"$ddout"
-		dd=($y_dd $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
+		dd=(${y_dd#-} $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
 		if [[ $unix2 ]]
 		then 	range_check=$((unix2-unix1))
 		else 	((ret+=245))
@@ -627,16 +717,16 @@ debugf()
 		{ 	[[ $range = "${range_check:-$range}" ]] &&
 			[[ ${sh[*]} = "${dd[*]:-${sh[*]}}" ]]
 		} || { 	echo -ne "\033[2K" >&2
-			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${inputA:0:19} ${inputB:0:19}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
+			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${inputA:0:25} ${inputB:0:25}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
 			ret=${ret:-1}
 		}
-		((DEBUG>1)) && exit ${ret:-0}  #!#
+		((DEBUG>1)) && return ${ret:-0}  #!#
 }
 
 #printing helper
-#(A). check if floating point ($1) is `>0', set return signal and $SS to ``s'' if `>1.0'.
+#(A). check if floating point in $1 is `>0', set return signal and $SS to `s' when `>1.0'.
 #usage: prHelpf 1.23
-#(B). set remaining spaces from [max] to $SSS.
+#(B). set padding of $1 length until [max] chars and set $SSS.
 #usage: prHelpf 1.23  [max]
 prHelpf()
 {
@@ -660,11 +750,13 @@ prHelpf()
 
 
 ## Parse options
-while getopts 0123456789df:hlRr@uVv opt
+while getopts 0123456790Ddf:hlRr@uVv opt
 do 	case $opt in
 		[0-9]) 	SCL="$SCL$opt"
 			;;
-		d) 	((++DEBUG))
+		d) 	((++DEBUG))  #debugging (check results against `datediff' and `date')
+			;;
+		D) 	DATE_CMD=(false)  #disable `date' command warping
 			;;
 		f) 	INPUT_FMT="$OPTARG" OPTF=1  #input format string for `BSD date'
 			;;
@@ -675,7 +767,7 @@ do 	case $opt in
 			;;
 		l) 	OPTL=1
 			;;
-		R) 	OPTRR=-R
+		R) 	OPTRR=1
 			;;
 		r|@) 	OPTR=1
 			;;
@@ -692,9 +784,9 @@ done
 shift $((OPTIND -1)); unset opt
 
 #set proper environment!
-((!OPTU)) && TZ=UTC0  #LC_ALL=C
-export TZ
 SCL="${SCL:-3}"  #scale defaults
+((!OPTU)) && TZ=UTC0  #time zone defaults
+export TZ
 
 #stdin input
 [[ ${1//[$IFS]} = $GLOBOPT ]] && opt="$1" && shift
