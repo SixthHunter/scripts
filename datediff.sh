@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.18.4  jun/2022  mountaineerbr  GPLv3+
+# v0.18.5  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -390,15 +390,15 @@ mainf()
 	then 	echo "err: illegal user input" >&2 ;return 2
 	fi
 
-	tzA="${tzA//[$IFS]}"
-	tzB="${tzB//[$IFS]}"
 	#negative years, negative offsets
 	[[ $inputA = -?* ]] && yearA=-$yearA
 	[[ $inputB = -?* ]] && yearB=-$yearB
-	[[ ${inputA%"${tzA##$GLOBUTC?([+-])}"} = *?- ]] && neg_tzA=-
-	[[ ${inputB%"${tzB##$GLOBUTC?([+-])}"} = *?- ]] && neg_tzB=-
-	tzA="$neg_tzA${tzA#*$GLOBUTC}"  #remove `UTC' from string
-	tzB="$neg_tzB${tzB#*$GLOBUTC}"
+	tzA="${tzA//[$IFS]}"
+	tzB="${tzB//[$IFS]}"
+	[[ ${inputA%"${tzA##$GLOBUTC?(+|-)}"} = *?- ]] && neg_tzA=-
+	[[ ${inputB%"${tzB##$GLOBUTC?(+|-)}"} = *?- ]] && neg_tzB=-
+	tzA="$neg_tzA${tzA##*$GLOBUTC?(+|-)}"  #remove `-UTC' from string
+	tzB="$neg_tzB${tzB##*$GLOBUTC?(+|-)}"
 
 	#offset support
 	if [[ ${tzA//[$SEP]}${tzB//[$SEP]} = +([0-9]) ]]
