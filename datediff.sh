@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.18.1  jun/2022  mountaineerbr  GPLv3+
+# v0.18.2  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -48,7 +48,7 @@ DESCRIPTION
 	option -v to decrease verbose and modify output layout. Gregorian
 	calendar is assumed. No leap seconds.
 
-	Offset in ISO-8601 DATES (up to seconds) is supported throughout
+	Offset in ISO-8601 DATES (up to minutes) is supported throughout
 	this script even when \`date' package is not available.
 
 	Environment \$TZ is read by GNU or FreeBSD \`date' programmes only.
@@ -689,6 +689,7 @@ mainf()
 		pr1="${yearA}-${monthA}-${dayA}T${hourA:-${pr1off:+0}}:${minA:-${pr1off:+0}}:${secA:-${pr1off:+0}}${pr1off}"
 		pr2="${yearB}-${monthB}-${dayB}T${hourB:-${pr2off:+0}}:${minB:-${pr2off:+0}}:${secB:-${pr2off:+0}}${pr2off}"
 		pr1="${pr1%%*([$SEP])}" pr2="${pr2%%*([$SEP])}"
+		prZeroPadf pr1 && prZeroPadf pr2
 		printf '%s%s\n%s%s%s\n%s%s%s\n%s\n'  \
 			DATES "${neg_range:+*}"  \
 			"${date1_iso8601_pr:-${date1_iso8601:-${pr1:-$inputA}}}" ''${unix1:+$'\t'} "$unix1"  \
@@ -747,6 +748,36 @@ prHelpf()
 	[[ $1 && $OPTT ]] || ((valx)) || return
 	(( int>1 || ( (int==1) && (dec) ) )) && SS=s
 	return 0
+}
+
+#pad variable name with leading noughts for ISO8601 date printing
+#usage: prZeroPadf varname
+prZeroPadf()
+{
+	local str str_l str_r str_m str_m str_ml str_mr str_mm
+	[[ $unix2 ]] && return 2  #don't mess with `date' output!
+	eval "str=\"\$$1\""
+	str="${str//[$IFS]}"
+
+	while [[ $str = *[$SEP][1-9][$SEP]* || $str = *[$SEP][1-9]
+		|| $str = [0-9][0-9][0-9][$SEP]* || $str = [0-9][0-9][$SEP]* || $str = [1-9][$SEP]* ]]
+	do 	if [[ $str = *[$SEP][1-9][$SEP]* ]]
+		then 	str_l="${str%%[$SEP][1-9][$SEP]*}"
+			str_r="${str#*[$SEP][1-9][$SEP]}"
+			str_m="${str#$str_l}" str_m="${str_m%$str_r}"
+			str_ml="${str_m%??}" str_mr="${str_m#??}"
+			str_mm="${str_m%?}" str_mm="${str_mm#?}"
+		elif [[ $str = *[$SEP][1-9] ]]
+		then 	str_l="${str%??}"
+			str_ml="${str:${#str}-2:1}"
+			str_mr="${str:${#str}-1:1}"
+		else 	str_r="$str"
+		fi
+	
+		str="${str_l}${str_ml}0${str_mm}${str_mr}${str_r}"
+		unset str_l str_r str_m str_ml str_mr str_mm
+	done
+	eval "$1=\"$str\""
 }
 
 
