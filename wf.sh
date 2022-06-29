@@ -11,7 +11,10 @@
 #  __ _  ___  __ _____  / /____ _(_)__  ___ ___ ____/ _ )____
 # /  ' \/ _ \/ // / _ \/ __/ _ `/ / _ \/ -_) -_) __/ _  / __/
 #/_/_/_/\___/\_,_/_//_/\__/\_,_/_/_//_/\__/\__/_/ /____/_/   
-                                                            
+
+#Open Cage api key for GPS coordinates
+OPENCAGEKEY=54f6cb1814a4426484b8f28c0b6adbb6
+
 #script name
 SN="${0##*/}"
 
@@ -51,6 +54,9 @@ DESCRIPTION
 	\"\" string, if needed. This is a very rough implementation!
 
 	Option -c prints GPS coordinate information from Opencagedata API.
+
+	Please update \$OPENCAGEKEY variable in the script head source
+	code with a free active key from Open Cage.
 
 
 SEE ALSO
@@ -164,7 +170,7 @@ gpshelperf()
 	#ADD BELOW YOU FAVORITE LOCATION BY NAME
 	#LATITUDE (LAT), LONGITUDE (LNG) AND ALTITUDE (METRE)
 	case "${query,,}" in
-		new*york) LAT= 40.7127281 LNG=-74.006015 METRE=10 ;;
+		new*york) LAT=40.7127281 LNG=-74.006015 METRE=10 ;;
 		apucarana) LAT=-23.5525327 LNG=-51.4610764 METRE=840 ;;
 		arapongas) LAT=-23.4152862 LNG=-51.4293961 METRE=816 ;;
 		belo*horizonte) LAT=-19.9227318 LNG=-43.9450948 METRE=852 ;;
@@ -183,7 +189,7 @@ gpshelperf()
 
 	if [[ -z "$LAT" ]]
 	then
-		data=$(curl -sL -H "$UAG" "https://api.opencagedata.com/geocode/v1/json?q=${query// /%20}&key=641c51bed8ab490184632ad8526e29ad&no_annotations=1&language=en")
+		data=$(curl -sL -H "$UAG" "https://api.opencagedata.com/geocode/v1/json?q=${query// /%20}&key=$OPENCAGEKEY&no_annotations=1&language=en")
 
 		#-c print coordinates only?
 		if ((OPTC))
