@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.18  jun/2022  mountaineerbr  GPLv3+
+# v0.18.1  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -40,7 +40,9 @@ DESCRIPTION
 	\`h', \`m' or \`s', only a single UNIT range is printed.
 
 	Output DATE section prints two dates in ISO-8601 format or, if
-	option -R is set, RFC-5322 format.
+	option -R is set, RFC-5322 format (when \`date' is available).
+
+	UTC0 is set by defaults. Set -u to allow local time settings.
 
 	Option -l checks if YEAR is leap and exits with 0 if true. Set
 	option -v to decrease verbose and modify output layout. Gregorian
@@ -312,10 +314,9 @@ mainf()
 {
 	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf offset_unsort yearA monthA dayA hourA minA secA tzA neg_tzA tzAh tzAm tzAs yearB monthB dayB hourB minB secB tzB neg_tzB tzBh tzBm tzBs ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_y range_mo range_w range_d range_h range_m range_print sh ddout dd y_dd mo_dd w_dd d_dd h_dd m_dd s_dd d_left_save d_sum date1_iso8601_pr date2_iso8601_pr pr1 pr2 range_check now varname var ar n r SS SSS
 
-	#get dates in unix time
 	(($# == 1)) && set -- '' "$1"
 
-	#if command `date' is available, get unix times from input string
+	#unix times from input string (when `date' package is available)
 	if 	unix1=$(datefun "${1:-+%s}" ${1:++%s}) &&
 		unix2=$(datefun "${2:-+%s}" ${2:++%s})
 	then 	{
@@ -408,7 +409,7 @@ mainf()
 		do 	eval "var=\"\$$varname\""
 			eval "$varname=\"${var#"${var%%[!0]*}"}\""
 		done
-		tzAh=$neg_tzA${tzAh:-0} ;tzBh=$neg_tzB${tzBh:-0}
+		tzAh=$neg_tzA${tzAh:-0} tzBh=$neg_tzB${tzBh:-0}
 
 		#check offset validity
 		if ((tzAh>24 || tzBh>24 || tzAm>60 || tzBm>60 || tzAs>60 || tzBs>60))
@@ -463,7 +464,7 @@ mainf()
 			date_buf=$tzAm tzAm=$tzBm tzBm=$date_buf
 			date_buf=$tzAs tzAs=$tzBs tzBs=$date_buf
 		fi
-	elif [[ ! $unix2$OPTVERBOSE && ${tzA//[$SEP]}${tzB//[$SEP]} = +([A-Za-z]) ]]
+	elif [[ ! $unix2$OPTVERBOSE && ${tzA//[$SEP]}${tzB//[$SEP]} = +([A-Za-z_])* ]]
 	then 	echo "warning: timezone support requires \`date' package!" >&2
 		unset tzA tzB tzAh tzBh tzAm tzBm tzAs tzBs
 	else 	unset tzA tzB tzAh tzBh tzAm tzBm tzAs tzBs
