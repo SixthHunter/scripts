@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.18.2  jun/2022  mountaineerbr  GPLv3+
+# v0.18.4  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -759,15 +759,15 @@ prZeroPadf()
 	eval "str=\"\$$1\""
 	str="${str//[$IFS]}"
 
-	while [[ $str = *[$SEP][1-9][$SEP]* || $str = *[$SEP][1-9]
-		|| $str = [0-9][0-9][0-9][$SEP]* || $str = [0-9][0-9][$SEP]* || $str = [1-9][$SEP]* ]]
-	do 	if [[ $str = *[$SEP][1-9][$SEP]* ]]
-		then 	str_l="${str%%[$SEP][1-9][$SEP]*}"
-			str_r="${str#*[$SEP][1-9][$SEP]}"
+	while [[ $str = *[$SEP][0-9][$SEP]* || $str = *[$SEP][0-9]
+		|| $str = [0-9][0-9][0-9][$SEP]* || $str = [0-9][0-9][$SEP]* || $str = [0-9][$SEP]* ]]
+	do 	if [[ $str = *[$SEP][0-9][$SEP]* ]]
+		then 	str_l="${str%%[$SEP][0-9][$SEP]*}"
+			str_r="${str#*[$SEP][0-9][$SEP]}"
 			str_m="${str#$str_l}" str_m="${str_m%$str_r}"
 			str_ml="${str_m%??}" str_mr="${str_m#??}"
 			str_mm="${str_m%?}" str_mm="${str_mm#?}"
-		elif [[ $str = *[$SEP][1-9] ]]
+		elif [[ $str = *[$SEP][0-9] ]]
 		then 	str_l="${str%??}"
 			str_ml="${str:${#str}-2:1}"
 			str_mr="${str:${#str}-1:1}"
