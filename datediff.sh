@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.18.5  jun/2022  mountaineerbr  GPLv3+
+# v0.18.6  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob
 
 HELP="NAME
@@ -397,7 +397,7 @@ mainf()
 	tzB="${tzB//[$IFS]}"
 	[[ ${inputA%"${tzA##$GLOBUTC?(+|-)}"} = *?- ]] && neg_tzA=-
 	[[ ${inputB%"${tzB##$GLOBUTC?(+|-)}"} = *?- ]] && neg_tzB=-
-	tzA="$neg_tzA${tzA##*$GLOBUTC?(+|-)}"  #remove `-UTC' from string
+	tzA="$neg_tzA${tzA##*$GLOBUTC?(+|-)}"  #remove `-UTC-' from string
 	tzB="$neg_tzB${tzB##*$GLOBUTC?(+|-)}"
 
 	#offset support
@@ -677,7 +677,7 @@ mainf()
 	if ((DEBUG))
 	then
 		#!# 
-		debugf "$@" || return
+		debugf "$@"
 	fi
 	
 	#print results
@@ -686,8 +686,8 @@ mainf()
 		[[ $tzA && ! $unix2 ]] && pr1off="${tzAh:-0}:${tzAm:-0}:${tzAs:-0}" pr1off="${pr1off%%*([:+-]0)}"
 		[[ $tzB && ! $unix2 ]] && pr2off="${tzBh:-0}:${tzBm:-0}:${tzBs:-0}" pr2off="${pr2off%%*([:+-]0)}"
 		[[ ${tzA:--} != -* ]] && pr1off=${pr1off:++}$pr1off ;[[ ${tzB:--} != -* ]] && pr2off=${pr2off:++}$pr2off
-		pr1="${yearA}-${monthA}-${dayA}T${hourA:-${pr1off:+0}}:${minA:-${pr1off:+0}}:${secA:-${pr1off:+0}}${pr1off}"
-		pr2="${yearB}-${monthB}-${dayB}T${hourB:-${pr2off:+0}}:${minB:-${pr2off:+0}}:${secB:-${pr2off:+0}}${pr2off}"
+		pr1="${yearA}-${monthA}-${dayA}T${hourA:-0}:${minA:-0}:${secA:-0}${pr1off}"
+		pr2="${yearB}-${monthB}-${dayB}T${hourB:-0}:${minB:-0}:${secB:-0}${pr2off}"
 		pr1="${pr1%%*([$SEP])}" pr2="${pr2%%*([$SEP])}"
 		prZeroPadf pr1 && prZeroPadf pr2
 		printf '%s%s\n%s%s%s\n%s%s%s\n%s\n'  \
@@ -722,7 +722,7 @@ debugf()
 			echo "sh=${sh[*]}"$'\t'"dd=${dd[*]}"$'\t'"${inputA:0:25} ${inputB:0:25}"$'\t'"${range:-unavail} ${range_check:-unavail}" 
 			ret=${ret:-1}
 		}
-		((DEBUG>1)) && return ${ret:-0}  #!#
+		((DEBUG>1)) && exit ${ret:-0}  #!#
 }
 
 #printing helper
@@ -756,8 +756,7 @@ prZeroPadf()
 {
 	local str str_l str_r str_m str_m str_ml str_mr str_mm
 	[[ $unix2 ]] && return 2  #don't mess with `date' output!
-	eval "str=\"\$$1\""
-	str="${str//[$IFS]}"
+	eval "str=\"\$${1//[$IFS]}\""
 
 	while [[ $str = *[$SEP][0-9][$SEP]* || $str = *[$SEP][0-9]
 		|| $str = [0-9][0-9][0-9][$SEP]* || $str = [0-9][0-9][$SEP]* || $str = [0-9][$SEP]* ]]
