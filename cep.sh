@@ -1,6 +1,6 @@
 #!/bin/bash
 # cep.sh  --  cep por nome de rua e vice-versa
-# v0.3.8  jun/2022  by mountaineerbr
+# v0.3.9  jun/2022  by mountaineerbr
 
 SN="${0##*/}"
 SCRIPT_PATH="$0"
@@ -118,7 +118,7 @@ mainf()
 		#format data in tables
 		jq -r '.dados[] | "\(.cep)\t\(.uf)\t\(.localidade)\t\(.bairro)\t\(.logradouroDNEC)\t\(.numeroLocalidade)\t\(.logradouroTextoAdicional)\t\(.nomeUnidade)\t\(.situacao)"' <<<"$data" \
 			| column -dts$'\t' -N1,2,3,4,5,6,7,8,9 -T4,7,8,9 \
-			| sed -r -e 's/\s*$//' ${OPTS[@]}
+			| sed ${OPTS[@]} -e 's/\s*$//'
 		
 		if ((pfim > t))
 		then 	jq -r .mensagem <<<"$data" | grep -vi sucesso && return 1
@@ -132,7 +132,7 @@ mainf()
 
 
 #ativar cep com hífen: xxxxx-xxx
-OPTS=(-e 's/^([0-9]{5})([0-9]{3})/\1-\2/')
+OPTS=(-r -e 's/^([0-9]{5})([0-9]{3})/\1-\2/')
 
 #parse options
 while getopts :hsv c
