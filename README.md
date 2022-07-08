@@ -5,10 +5,10 @@
 NAME | DESCRIPTION
 :-------------|:-----------
 __ala.sh__ | Arch Linux Archives (aka ALA) explorer
-__anta.sh__ | Explorador do site &lt;oantagonista.com&gt;; spider of the website &lt;oantagonista.com&gt;
+__anta.sh__ | Explorador do sítio (website spider) &lt;oantagonista.com&gt;
 __bcalc.sh__ | Simple wrapper for Bash Bc and Zsh maths that keeps a record of results
 __bcalc_ext.bc__ | *bcalc.sh* extensions for bash bc
-__cep.sh__ | CEP por Nome de Rua e Vice-Versa via API dos Correios brasileiros
+__cep.sh__ | CEP por nome de rua e vice-versa via api dos Correios brasileiros
 __ctemp.sh__ | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
 __datediff.sh__ | Calculate time ranges in different units (was `ddate.sh` )
 __faster_sh.txt__ | Tips for improving script performances, specific for some use cases, text document
@@ -18,7 +18,7 @@ __ipmet.sh__ | Download radar images from Brazilian Instituto de Pesquisas Meteo
 __ul.sh__ |  Generate html lists from URLs
 __urlgrep.sh__ | Grep full-text content from URL list
 __wc.sh__ |  Print line, word and character count for files with shell built-ins
-__wf.sh__ |  Weather forecast (norway meteorological institute)
+__wf.sh__ |  Weather forecast (Norway Meteorological Institute)
 
 
 ## MARKET-RELATED
