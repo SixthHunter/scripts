@@ -137,11 +137,15 @@ Brandleesee's _Mop: track stocks the hacker way_
 
 <https://github.com/mop-tracker/mop>
 
+
+<br/>
+
 <p align="center">
   <img width="120" height="120" alt="Silly Software Company logo" src="logo_ssc.jpg">
 </p>
 
----
+
+<br/>
 
     Please consider sending me a nickle!  = )
 
