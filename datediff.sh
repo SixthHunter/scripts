@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.2  jun/2022  mountaineerbr  GPLv3+
+# v0.19.3  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -42,11 +42,11 @@ DESCRIPTION
 	Output DATE section prints two dates in ISO-8601 format or, if
 	option -R is set, RFC-5322 format (when \`date' is available).
 
-	Option -u sets or prints dates in Coordinated Universal Time (UTC).
-
 	Option -l checks if YEAR is leap. Set option -v to decrease ver-
 	bose. ISO-8601 system assumes proleptic Gregorian calendar, year
 	zero and no leap seconds.
+
+	Option -u sets or prints dates in Coordinated Universal Time (UTC).
 
 	ISO-8601 DATE offset is supported throughout this script. When
 	environment \$TZ is a positive or negative decimal number, such
@@ -389,6 +389,7 @@ mainf()
 	 ((minB==60)) && (( (neg_tzB>0 ?  (tzBm-=minB-59) :  (tzBm+=minB-59) ) ,   (minB-=minB-59) ))
 	 ((secA==60)) && (( (neg_tzA>0 ?  (tzAs-=secA-59) :  (tzAs+=secA-59) ) ,   (secA-=secA-59) ))
 	 ((secB==60)) && (( (neg_tzB>0 ?  (tzBs-=secB-59) :  (tzBs+=secB-59) ) ,   (secB-=secB-59) ))
+	#check script `globs', too, as they may fail with weyrd dates and formats.
 
 	#check input validity
 	date1_month_max_day=$(month_maxday "$monthA" "$yearA")
@@ -400,7 +401,6 @@ mainf()
 		))
 	then 	echo "err: illegal user input" >&2 ;return 2
 	fi
-	#check script `globs', too, as they fail with weyrd dates and formats.
 
 	#offset and $TZ support
 	if [[ ! $unix2 ]] && ((tzAh||tzAm||tzAs||tzBh||tzBm||tzBs||TZh||TZm||TZs))
@@ -536,7 +536,7 @@ mainf()
 		pairSwapf inputA yearA monthA dayA hourA minA secA \
 			yearAtz monthAtz dayAtz hourAtz minAtz secAtz \
 			tzA tzAh tzAm tzAs neg_tzA \
-			date1_iso8601_pr  #date1_iso8601 unix1
+			date1_iso8601_pr date1_month_max_day  #date1_iso8601 unix1
 		set -- "$2" "$1" "${@:3}"
 	fi
 	#`$secXprtz' vars are not needed any longer, so leave them alone.
@@ -581,7 +581,7 @@ mainf()
 
 	#some info about input dates and their context..
 	date3_month_max_day=$(month_maxday "$((monthB==1 ? 12 : monthB-1))" "$yearB")
-	#date1_month_max_day=$(month_maxday "$monthA" "$yearA") #this should already be set by now!
+	#date1_month_max_day=$(month_maxday "$monthA" "$yearA") #this SHOULD be correctly set by now!
 	date1_year_days_adj=$(year_days_adj "$monthA" "$yearA")
 
 
