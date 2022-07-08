@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.1  jun/2022  mountaineerbr  GPLv3+
+# v0.19.2  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -36,22 +36,22 @@ DESCRIPTION
 
 	Single UNIT time periods can be displayed in table format (-V)
 	and their scale set with -NUM where NUM is an integer. When last
-	positional parameter UNIT is exactly one of \`y', \`mo', \`w', \`d',
-	\`h', \`m' or \`s', only a single UNIT range is printed.
+	positional parameter UNIT is exactly one of \`Y', \`MO', \`W', \`D',
+	\`H', \`M' or \`S', only a single UNIT range is printed.
 
 	Output DATE section prints two dates in ISO-8601 format or, if
 	option -R is set, RFC-5322 format (when \`date' is available).
 
-	Option -u sets Coordinated Universal Time (UTC) for calculations.
+	Option -u sets or prints dates in Coordinated Universal Time (UTC).
 
 	Option -l checks if YEAR is leap. Set option -v to decrease ver-
-	bose and modify output layout. ISO-8601 system assumes proleptic
-	Gregorian calendar, year zero and no leap seconds.
+	bose. ISO-8601 system assumes proleptic Gregorian calendar, year
+	zero and no leap seconds.
 
 	ISO-8601 DATE offset is supported throughout this script. When
-	environment \$TZ is a positive or negative decimal number, it is
-	interpreted as offset. Variable \$TZ with timezone name or ID
-	(e.g. America/Sao_Paulo) is supported by \`date' programme.
+	environment \$TZ is a positive or negative decimal number, such
+	as \`UTC+3', it is read as offset. Variable \$TZ with timezone name
+	or ID (e.g. \`America/Sao_Paulo') is supported by \`date' programme.
 
 	This script uses Bash arithmetics to perform most time range cal-
 	culations, as long as input is a valid ISO-8601 date format.
@@ -61,7 +61,7 @@ ENVIRONMENT
 	TZ 	Offset time. POSIX time zone definition by the \$TZ vari-
 		able takes a different form from ISO-8601 standards, so
 		that UTC-03 is equivalent to setting \$TZ=UTC+03. Only
-		\`date' programme can parse timezone names and IDS.
+		the \`date' programme can parse timezone names and IDS.
 
 
 REFINEMENT RULES
@@ -400,6 +400,7 @@ mainf()
 		))
 	then 	echo "err: illegal user input" >&2 ;return 2
 	fi
+	#check script `globs', too, as they fail with weyrd dates and formats.
 
 	#offset and $TZ support
 	if [[ ! $unix2 ]] && ((tzAh||tzAm||tzAs||tzBh||tzBm||tzBs||TZh||TZm||TZs))
@@ -830,8 +831,8 @@ debugf()
 
 		if [[ $date_cmd_save = false ]]
 		then
-			if ((TZs)) || [[ $TZ = *:*:*:* ]]
-			then 	echo "warning: \`datediff' cannot take offset with seconds" >&2
+			if ((TZs)) || [[ $TZ = *:*:*:* ]] || [[ $tzA = *:*:*:* ]] || [[ $tzB = *:*:*:* ]]
+			then 	echo "warning: \`datediff' and \`date' may not take offsets with seconds" >&2
 				((ret+=230))
 			fi
 
