@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19  jun/2022  mountaineerbr  GPLv3+
+# v0.19.1  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -51,7 +51,7 @@ DESCRIPTION
 	ISO-8601 DATE offset is supported throughout this script. When
 	environment \$TZ is a positive or negative decimal number, it is
 	interpreted as offset. Variable \$TZ with timezone name or ID
-	(e.g. America/Sao_Paulo) is supported by GNU \`date' programme.
+	(e.g. America/Sao_Paulo) is supported by \`date' programme.
 
 	This script uses Bash arithmetics to perform most time range cal-
 	culations, as long as input is a valid ISO-8601 date format.
@@ -61,7 +61,7 @@ ENVIRONMENT
 	TZ 	Offset time. POSIX time zone definition by the \$TZ vari-
 		able takes a different form from ISO-8601 standards, so
 		that UTC-03 is equivalent to setting \$TZ=UTC+03. Only
-		GNU \`date' programme can parse timezone names and IDS.
+		\`date' programme can parse timezone names and IDS.
 
 
 REFINEMENT RULES
@@ -222,9 +222,11 @@ OPTIONS
 SEP='Tt/.:+-'
 GLOBOPT='@(y|mo|w|d|h|m|s|Y|MO|W|D|H|M|S)'
 GLOBUTC='*(+|-)@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt]|Z|z)'  #see bug ``*?(exp)'' in bash2.05b extglob
+GLOBTZ="?($GLOBUTC)?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9]|:60)?(:?([0-5])[0-9]|:60)"
 GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
-GLOBTIME='@(2[0-4]|?([01])[0-9]):?([0-5])[0-9]?(:?([0-5])[0-9])?(?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9])?(:?([0-5])[0-9]))'
+GLOBTIME="@(2[0-4]|?([01])[0-9]):?(?([0-5])[0-9]|60)?(:?([0-5])[0-9]|:60)?($GLOBTZ)"
 #https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
+#custom support for 24h clock and leap second
 
 YEAR_MONTH_DAYS=(31 28 31 30 31 30 31 31 30 31 30 31)
 TIME_ISO8601_FMT='%Y-%m-%dT%H:%M:%S%z'
@@ -254,7 +256,7 @@ datefun()
 		then 	ar=(${1//[$SEP]/ })
 			[[ ${1//[$IFS]} = +([0-9])[:]* ]] && start=9 || start=0
 			((chars=(${#ar[@]}*2)+(${#ar[@]}-1) ))
-			"${DATE_CMD}" ${options} -j -f "${TIME_ISO8601_FMT:start:chars}" "$@" && return
+			"${DATE_CMD}" ${options} -j -f "${TIME_ISO8601_FMT:start:chars}" "${@/$GLOBUTC}" && return
 		fi
 		[[ ${1:-+%} != @(+%|@|-f)* ]] && set -- -f"${input_fmt}" "$@"
 		[[ $1 = @* ]] && set -- "-r${1#@}" "${@:2}"
@@ -380,7 +382,7 @@ mainf()
 		eval "(($varname=\${$varname//[!+-]}10#0\${$varname#[+-]}))"
 	done  #https://www.oasys.net/fragments/leading-zeros-in-bash/
 
-	#24h and input leap second support (these $*tz parameters will be zeroed later)
+	#24h clock and input leap second support (these $*tz parameters will be zeroed later)
 	((hourA==24)) && (( (neg_tzA>0 ? (tzAh-=hourA-23) : (tzAh+=hourA-23) ) , (hourA-=hourA-23) ))
 	((hourB==24)) && (( (neg_tzB>0 ? (tzBh-=hourB-23) : (tzBh+=hourB-23) ) , (hourB-=hourB-23) ))
 	 ((minA==60)) && (( (neg_tzA>0 ?  (tzAm-=minA-59) :  (tzAm+=minA-59) ) ,   (minA-=minA-59) ))
