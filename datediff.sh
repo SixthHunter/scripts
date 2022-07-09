@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.5  jun/2022  mountaineerbr  GPLv3+
+# v0.19.6  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -350,8 +350,8 @@ mainf()
 		|| now=$(datefun -Iseconds) \
 		|| now=1970-01-01T00:00:00
 	} 2>/dev/null
-	[[ ! $1 ]] && set -- "${now}" "${@:2}"
-	[[ ! $2 ]] && set -- "$1" "${now}" "${@:3}"
+	[[ ! $1 ]] && set -- "${now}" "${@:2}"      ;date1_iso8601="$now"
+	[[ ! $2 ]] && set -- "$1" "${now}" "${@:3}" ;date2_iso8601="$now"
 
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
