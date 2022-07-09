@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.7  jun/2022  mountaineerbr  GPLv3+
+# v0.19.8  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -821,7 +821,7 @@ debugf()
 		TZ=UTC${TZ##*$GLOBUTC}
 
 		#fix original input strings
-		[[ $2 = *[+-]$GLOBTZ && $1 = *[+-]$GLOBTZ ]] || echo warning: input dates are missing offset/tz bits! >&2
+		[[ $2 = *[Tt:]*[+-]$GLOBTZ && $1 = *[Tt:]*[+-]$GLOBTZ ]] || echo warning: input dates are missing offset/tz bits! >&2
 		iB="${2:0:25}" iA="${1:0:25}"  #`$inputB' and `$inputA' instead?
 		((${#iB}==10)) && iB=${iB}T00:00:00
 		((${#iA}==10)) && iA=${iA}T00:00:00
