@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.3  jun/2022  mountaineerbr  GPLv3+
+# v0.19.4  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -179,7 +179,7 @@ OPTIONS
 
 
 #TESTING RESULTS
-#MAIN TESTING SCRIPT: <https://pastebin.com/27RjhjCH>.
+#MAIN TESTING SCRIPT: <https://pastebin.com/suw4Bif3>
 #Hroptatyr's `man datediff' says ``refinement rules'' cover over 99% cases.
 #Calculated `datediff' error rate is at least .00311 (0.3%) of total tested dates (compound range).
 #Results differ from `datediff' in .006275 (0,6%) of all tested dates in script version v0.16.8 (compound range).
@@ -808,7 +808,8 @@ debugf()
 		TZ=UTC${TZ##*$GLOBUTC}
 
 		#fix original input strings
-		iB="${inputB:0:25}" iA="${inputA:0:25}"
+		[[ $2 = *[+-]$GLOBTZ && $1 = *[+-]$GLOBTZ ]] || echo warning: input dates are missing offset/tz bits! >&2
+		iB="${2:0:25}" iA="${1:0:25}"  #`$inputB' and `$inputA' instead?
 		((${#iB}==10)) && iB=${iB}T00:00:00
 		((${#iA}==10)) && iA=${iA}T00:00:00
 		((${#iB}==19)) && iB="${iB}+00:00"
