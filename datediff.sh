@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.4  jun/2022  mountaineerbr  GPLv3+
+# v0.19.5  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -222,7 +222,7 @@ OPTIONS
 SEP='Tt/.:+-'
 GLOBOPT='@(y|mo|w|d|h|m|s|Y|MO|W|D|H|M|S)'
 GLOBUTC='*(+|-)@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt]|Z|z)'  #see bug ``*?(exp)'' in bash2.05b extglob
-GLOBTZ="?($GLOBUTC)?(+|-)@(2[0-4]|?([01])[0-9])?(:?([0-5])[0-9]|:60)?(:?([0-5])[0-9]|:60)"
+GLOBTZ="?($GLOBUTC)?(+|-)@(2[0-4]|?([01])[0-9])?(?(:?([0-5])[0-9]|:60)?(:?([0-5])[0-9]|:60)|?(?([0-5])[0-9]|60)?(?([0-5])[0-9]|60))"
 GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
 GLOBTIME="@(2[0-4]|?([01])[0-9]):?(?([0-5])[0-9]|60)?(:?([0-5])[0-9]|:60)?($GLOBTZ)"
 #https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s07.html
@@ -345,9 +345,13 @@ mainf()
 	fi
 	
 	#set default date -- AD
-	[[ ! $1 || ! $2 ]] && now=$(datefun -Iseconds  2>/dev/null) || now=1970-01-01T00:00:00
-	[[ ! $1 ]] && set -- "${now:0:19}" "${@:2}"
-	[[ ! $2 ]] && set -- "$1" "${now:0:19}" "${@:3}"
+	[[ ! $1 || ! $2 ]] && {
+		printf -v now "%(${TIME_ISO8601_FMT})T" -1 \
+		|| now=$(datefun -Iseconds) \
+		|| now=1970-01-01T00:00:00
+	} 2>/dev/null
+	[[ ! $1 ]] && set -- "${now}" "${@:2}"
+	[[ ! $2 ]] && set -- "$1" "${now}" "${@:3}"
 
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
@@ -358,10 +362,27 @@ mainf()
 	IFS="${IFS}${SEP/[Tt]}" read tzBh tzBm tzBs  var <<<"${tzB##?($GLOBUTC?(+|-)|[+-])}"
 	IFS="${IFS}${SEP/[Tt]}" read TZh TZm TZs  var <<<"${TZ##?($GLOBUTC?(+|-)|[+-])}"
 
+	#fill in some defaults
+	monthA=${monthA:-1} dayA=${dayA:-1}  monthB=${monthB:-1} dayB=${dayB:-1}
+	#support offset as `[+-]XXXX??'
+	[[ $tzAh = [0-9][0-9][0-9][0-9]?([0-9][0-9]) ]] \
+		&& tzAs=${tzAh:4:2} tzAm=${tzAh:2:2} tzAh=${tzAh:0:2}
+	[[ $tzBh = [0-9][0-9][0-9][0-9]?([0-9][0-9]) ]] \
+		&& tzBs=${tzBh:4:2} tzBm=${tzBh:2:2} tzBh=${tzBh:0:2}
+	[[ ${TZh} = [0-9][0-9][0-9][0-9]?([0-9][0-9]) ]] \
+		&& TZs=${TZh:4:2} TZm=${TZh:2:2} TZh=${TZh:0:2}
+
+	#set parameters as decimals ASAP
+	for varname in yearA monthA dayA hourA minA secA  \
+		yearB monthB dayB hourB minB secB  \
+		tzAh tzAm tzAs  tzBh tzBm tzBs  TZh TZm TZs
+	do 	eval "[[ \${$varname} = *[A-Za-z_]* ]] && continue"  #avoid printing errs
+		eval "(($varname=\${$varname//[!+-]}10#0\${$varname#[+-]}))"
+	done  #https://www.oasys.net/fragments/leading-zeros-in-bash/
+
 	#negative years
 	[[ $inputA = -?* ]] && yearA=-$yearA
 	[[ $inputB = -?* ]] && yearB=-$yearB
-	monthA=${monthA:-1} monthB=${monthB:-1} dayA=${dayA:-1} dayB=${dayB:-1}
 	#
 	#iso8601 date string offset
 	[[ ${inputA%"${tzA##?($GLOBUTC?(+|-)|[+-])}"} = *?- ]] && neg_tzA=-1 || neg_tzA=+1
@@ -374,14 +395,6 @@ mainf()
 	((TZh==0 && TZm==0 && TZs==0)) && TZ_neg=+1
 	[[ $TZh$TZm$TZs = *([0-9+-]) ]] || unset TZh TZm TZs  #TZ  #$TZ will be unset later
 
-	#set parameters as decimal
-	for varname in yearA monthA dayA hourA minA secA  \
-		yearB monthB dayB hourB minB secB  \
-		tzAh tzAm tzAs  tzBh tzBm tzBs  TZh TZm TZs
-	do 	eval "[[ \${$varname} = *[A-Za-z_]* ]] && continue"  #avoid printing errs
-		eval "(($varname=\${$varname//[!+-]}10#0\${$varname#[+-]}))"
-	done  #https://www.oasys.net/fragments/leading-zeros-in-bash/
-
 	#24h clock and input leap second support (these $*tz parameters will be zeroed later)
 	((hourA==24)) && (( (neg_tzA>0 ? (tzAh-=hourA-23) : (tzAh+=hourA-23) ) , (hourA-=hourA-23) ))
 	((hourB==24)) && (( (neg_tzB>0 ? (tzBh-=hourB-23) : (tzBh+=hourB-23) ) , (hourB-=hourB-23) ))
@@ -389,7 +402,7 @@ mainf()
 	 ((minB==60)) && (( (neg_tzB>0 ?  (tzBm-=minB-59) :  (tzBm+=minB-59) ) ,   (minB-=minB-59) ))
 	 ((secA==60)) && (( (neg_tzA>0 ?  (tzAs-=secA-59) :  (tzAs+=secA-59) ) ,   (secA-=secA-59) ))
 	 ((secB==60)) && (( (neg_tzB>0 ?  (tzBs-=secB-59) :  (tzBs+=secB-59) ) ,   (secB-=secB-59) ))
-	#check script `globs', too, as they may fail with weyrd dates and formats.
+	#CHECK SCRIPT `GLOBS', TOO, as they may fail with weyrd dates and formats.
 
 	#check input validity
 	date1_month_max_day=$(month_maxday "$monthA" "$yearA")
