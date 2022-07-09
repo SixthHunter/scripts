@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.6  jun/2022  mountaineerbr  GPLv3+
+# v0.19.7  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -15,13 +15,13 @@ SYNOPSIS
 
 DESCRIPTION
 	Calculate time intervals between DATE1 and DATE2 or check for leap
-	years. The \`date' programme is run to process dates if available.
+	years. The \`date' programme is optionally run to process dates.
 
 	\`GNU date' accepts mostly free format human readable date strings.
-	Input DATE strings must be ISO-8601 \`%Y-%m-%dT%H:%M:%S' if using
-	\`FreeBSD date' unless option \`-f FMT' is set to a new input time
-	format. If \`date' programme is not available then input must be
-	ISO-8601 formatted.
+	If using \`FreeBSD date', input DATE strings must be ISO-8601,
+	\`YYYY-MM-DDThh:mm:ss' unless option \`-f FMT' is set to a new
+	input time format. If \`date' programme is not available then input
+	must be ISO-8601 formatted.
 
 	If DATE is not set, defaults to \`now'. To flag DATE as UNIX time,
 	prepend an at sign \`@' to it or set option -r. Stdin input sup-
@@ -350,8 +350,8 @@ mainf()
 		|| now=$(datefun -Iseconds) \
 		|| now=1970-01-01T00:00:00
 	} 2>/dev/null
-	[[ ! $1 ]] && set -- "${now}" "${@:2}"      ;date1_iso8601="$now"
-	[[ ! $2 ]] && set -- "$1" "${now}" "${@:3}" ;date2_iso8601="$now"
+	[[ ! $1 ]] && { 	set -- "${now}" "${@:2}"      ;date1_iso8601="$now" ;}
+	[[ ! $2 ]] && { 	set -- "$1" "${now}" "${@:3}" ;date2_iso8601="$now" ;}
 
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
