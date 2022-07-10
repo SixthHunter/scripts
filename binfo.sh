@@ -1,6 +1,6 @@
 #!/bin/bash
 # binfo.sh -- bitcoin blockchain explorer for bash
-# v0.9.22  jun/2021  by mountaineerbr
+# v0.9.23  jun/2021  by mountaineerbr
 
 #defaults
 
@@ -1118,12 +1118,10 @@ else
 		do
 			unset notok
 
-			#is legacy addr?
-			if [[ "$arg" =~ ^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$ ]]
+			#is legacy or bech32 addr?
+			if [[ "$arg" =~ ^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$ ]] ||
+				[[ "$arg" =~ ^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$ ]]
 			then raddf "$arg"      #addr from blockchain.com
-			#is bech32 addr?
-			elif [[ "$arg" =~ ^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$ ]]
-			then chairaddf "$arg"  #addr from blockchair
 			#is tx or block?
 			elif [[ "$arg"  =~ ^[a-fA-F0-9]{64}$ ]]
 			then
