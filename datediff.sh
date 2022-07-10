@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.8  jun/2022  mountaineerbr  GPLv3+
+# v0.19.9  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -221,7 +221,7 @@ OPTIONS
 #globs
 SEP='Tt/.:+-'
 GLOBOPT='@(y|mo|w|d|h|m|s|Y|MO|W|D|H|M|S)'
-GLOBUTC='*(+|-)@([Uu][Tt][Cc]|[Uu][Cc][Tt]|[Gg][Mm][Tt]|Z|z)'  #see bug ``*?(exp)'' in bash2.05b extglob
+GLOBUTC='*(+|-)@(?([Uu])[Tt][Cc]|?([Uu])[Cc][Tt]|?([Gg])[Mm][Tt]|Z|z)'  #see bug ``*?(exp)'' in bash2.05b extglob; [UG] are marked optional for another hack in this script 
 GLOBTZ="?($GLOBUTC)?(+|-)@(2[0-4]|?([01])[0-9])?(?(:?([0-5])[0-9]|:60)?(:?([0-5])[0-9]|:60)|?(?([0-5])[0-9]|60)?(?([0-5])[0-9]|60))"
 GLOBDATE='?(+|-)+([0-9])[/.-]@(1[0-2]|?(0)[1-9])[/.-]@(3[01]|?(0)[1-9]|[12][0-9])'
 GLOBTIME="@(2[0-4]|?([01])[0-9]):?(?([0-5])[0-9]|60)?(:?([0-5])[0-9]|:60)?($GLOBTZ)"
@@ -356,8 +356,8 @@ mainf()
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
 	inputB="${date2_iso8601:-$2}"
-	IFS="${IFS}${SEP}" read yearA monthA dayA hourA minA secA  tzA <<<"${inputA##*(+|-)}"
-	IFS="${IFS}${SEP}" read yearB monthB dayB hourB minB secB  tzB <<<"${inputB##*(+|-)}"
+	IFS="${IFS}${SEP}UuGgZz" read yearA monthA dayA hourA minA secA  tzA <<<"${inputA##*(+|-)}"
+	IFS="${IFS}${SEP}UuGgZz" read yearB monthB dayB hourB minB secB  tzB <<<"${inputB##*(+|-)}"
 	IFS="${IFS}${SEP/[Tt]}" read tzAh tzAm tzAs  var <<<"${tzA##?($GLOBUTC?(+|-)|[+-])}"
 	IFS="${IFS}${SEP/[Tt]}" read tzBh tzBm tzBs  var <<<"${tzB##?($GLOBUTC?(+|-)|[+-])}"
 	IFS="${IFS}${SEP/[Tt]}" read TZh TZm TZs  var <<<"${TZ##?($GLOBUTC?(+|-)|[+-])}"
@@ -549,7 +549,7 @@ mainf()
 		pairSwapf inputA yearA monthA dayA hourA minA secA \
 			yearAtz monthAtz dayAtz hourAtz minAtz secAtz \
 			tzA tzAh tzAm tzAs neg_tzA \
-			date1_iso8601_pr date1_month_max_day  #date1_iso8601 unix1
+		 	date1_iso8601 date1_iso8601_pr date1_month_max_day  #unix1
 		set -- "$2" "$1" "${@:3}"
 	fi
 	#`$secXprtz' vars are not needed any longer, so leave them alone.
