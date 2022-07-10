@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.9  jun/2022  mountaineerbr  GPLv3+
+# v0.19.11  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -112,6 +112,7 @@ WARRANTY
 
 	Please consider sending me a nickle!
 		=) 	bc1qlxm5dfjl58whg6tvtszg5pfna9mn2cr2nulnjr
+
 
 EXAMPLES
 	Leap year check
@@ -370,7 +371,7 @@ mainf()
 	[[ $tzBh = [0-9][0-9][0-9][0-9]?([0-9][0-9]) ]] \
 		&& tzBs=${tzBh:4:2} tzBm=${tzBh:2:2} tzBh=${tzBh:0:2}
 	[[ ${TZh} = [0-9][0-9][0-9][0-9]?([0-9][0-9]) ]] \
-		&& TZs=${TZh:4:2} TZm=${TZh:2:2} TZh=${TZh:0:2}
+		&&   TZs=${TZh:4:2}   TZm=${TZh:2:2}   TZh=${TZh:0:2}
 
 	#set parameters as decimals ASAP
 	for varname in yearA monthA dayA hourA minA secA  \
@@ -807,8 +808,8 @@ mainf()
 			"${date2_iso8601_pr:-${date2_iso8601:-$inputB}}" ''${unix2:+$'\t'} "$unix2"  \
 			INTERVALS
 	fi
-	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
 	((OPTVERBOSE<2 || OPTVERBOSE>2)) && printf '%dY %02dM %02dW %02dD  %02dh %02dm %02ds\n' "${sh[@]}"
+	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
 
 	return ${ret:-0}
 }
@@ -975,7 +976,7 @@ done
 shift $((OPTIND -1)); unset opt
 
 #set proper environment!
-SCL="${SCL:-3}"  #scale defaults
+SCL="${SCL:-2}"  #scale defaults
 ((OPTU)) && TZ=UTC  #set UTC time zone
 export TZ
 
