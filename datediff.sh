@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.11  jun/2022  mountaineerbr  GPLv3+
+# v0.19.12  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -320,7 +320,7 @@ isleap()
 #datediff fun
 mainf()
 {
-	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA neg_tzA tzAh tzAm tzAs yearB monthB dayB hourB minB secB tzB neg_tzB tzBh tzBm tzBs ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s range_y range_mo range_w range_d range_h range_m range_print sh d_left_save d_sum date1_iso8601_pr date2_iso8601_pr yearAtz monthAtz dayAtz hourAtz minAtz secAtz yearBtz monthBtz dayBtz hourBtz minBtz secBtz yearAprtz monthAprtz dayAprtz hourAprtz minAprtz secAprtz yearBprtz monthBprtz dayBprtz hourBprtz minBprtz secBprtz range_check now badges varname var ok ar n p q r v SS SSS TZh TZm TZs TZ_neg TZ_pos
+	local date1_iso8601 date2_iso8601 unix1 unix2 inputA inputB range neg_range date_buf yearA monthA dayA hourA minA secA tzA neg_tzA tzAh tzAm tzAs yearB monthB dayB hourB minB secB tzB neg_tzB tzBh tzBm tzBs ret years_between y_test leapcount daycount_leap_years daycount_years fullmonth_days fullmonth_days_save monthcount month_test month_tgt date1_month_max_day date2_month_max_day date3_month_max_day date1_year_days_adj d_left y mo w d h m s bc range_pr sh d_left_save d_sum date1_iso8601_pr date2_iso8601_pr yearAtz monthAtz dayAtz hourAtz minAtz secAtz yearBtz monthBtz dayBtz hourBtz minBtz secBtz yearAprtz monthAprtz dayAprtz hourAprtz minAprtz secAprtz yearBprtz monthBprtz dayBprtz hourBprtz minBprtz secBprtz range_check now badges varname var ok ar n p q r v SS SSS TZh TZm TZs TZ_neg TZ_pos
 
 	(($# == 1)) && set -- '' "$1"
 
@@ -719,7 +719,7 @@ mainf()
 		fi
 
 		var=$(GETUNIX=1 DATE_CMD=false OPTVERBOSE=1 OPTRR= TZ=  \
-			mainf 1970-01-01T00:00:00 $var ) || ((ret+=$?))
+			mainf 1970-01-01T00:00:00 $var) || ((ret+=$?))
 
 		((year${varname}<1970)) && ((var*=-1))
 		if [[ $varname = B ]]
@@ -728,47 +728,43 @@ mainf()
 		fi
 	fi
 
-	#single unit time ranges (when `bc' is available)
-	if { 	(( (!OPTT&&OPTVERBOSE<3)||OPTTy)) &&
-		range_y=$(bc <<<"scale=${SCL}; ${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) )")
-		} || ((OPTT))
-	then
-		((!OPTT||OPTTmo)) && range_mo=$(bc <<<"scale=${SCL}; ${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) )")
-		((!OPTT||OPTTw)) && range_w=$(bc <<<"scale=${SCL}; ${range:-0} / 604800")
-		((!OPTT||OPTTd)) && range_d=$(bc <<<"scale=${SCL}; ${range:-0} / 86400")
-		((!OPTT||OPTTh)) && range_h=$(bc <<<"scale=${SCL}; ${range:-0} / 3600")
-		((!OPTT||OPTTm)) && range_m=$(bc <<<"scale=${SCL}; ${range:-0} / 60")
-
-		#choose layout of single units
-		if ((! OPTLAYOUT || OPTT))
+	#single unit time durations (when `bc' is available)
+	if ((OPTT || OPTVERBOSE<3)) &&
+		bc=( $(bc <<<"scale = ${SCL};
+		(${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) ) ); /**  YEARS  **/
+		(${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) ) ); /**  MONTHS **/
+		(${range:-0} / 604800); /**  WEEKS  **/
+		(${range:-0} / 86400); /**  DAYS   **/
+		(${range:-0} / 3600); /**  HOURS  **/
+		(${range:-0} / 60); /** MINUTES **/") )
+		#ARRAY:  0=YEARS  1=MONTHS  2=WEEKS  3=DAYS  4=HOURS  5=MINUTES
+	then 	#choose layout of single units
+		if ((OPTT || !OPTLAYOUT))
 		then 	#layout one
-			prHelpf $range_y && range_print="$range_y year$SS"
-			prHelpf $range_mo && range_print="$range_print | $range_mo month$SS"
-			prHelpf $range_w && range_print="$range_print | $range_w week$SS"
-			prHelpf $range_d && range_print="$range_print | $range_d day$SS"
-			prHelpf $range_h && range_print="$range_print | $range_h hour$SS"
-			prHelpf $range_m && range_print="$range_print | $range_m min$SS"
-			prHelpf $range  ;((!OPTT||OPTTs)) && range_print="$range_print | $range sec$SS"
-			range_print="${range_print# | }"
+			prHelpf ${OPTTy:+${bc[0]}} && range_pr="${bc[0]} year$SS"
+			prHelpf ${OPTTmo:+${bc[1]}} && range_pr="$range_pr | ${bc[1]} month$SS"
+			prHelpf ${OPTTw:+${bc[2]}} && range_pr="$range_pr | ${bc[2]} week$SS"
+			prHelpf ${OPTTd:+${bc[3]}} && range_pr="$range_pr | ${bc[3]} day$SS"
+			prHelpf ${OPTTh:+${bc[4]}} && range_pr="$range_pr | ${bc[4]} hour$SS"
+			prHelpf ${OPTTm:+${bc[5]}} && range_pr="$range_pr | ${bc[5]} min$SS"
+			prHelpf $range  ;((!OPTT||OPTTs)) && range_pr="$range_pr | $range sec$SS"
+			range_pr="${range_pr# | }"
 		else 	#layout two
-			for r in ${#range_y} ${#range_mo} ${#range_w} ${#range_d} ${#range_h} ${#range_m} $((${#range}+SCL+1))
-			do ((r>n && (n=r) ))
-			done
-			prHelpf $range_y $n && range_print=Year$SS$'\t'$SSS$range_y
-			prHelpf $range_mo $n && range_print="$range_print"$'\n'Month$SS$'\t'$SSS$range_mo
-			prHelpf $range_w $n && range_print="$range_print"$'\n'Week$SS$'\t'$SSS$range_w
-			prHelpf $range_d $n && range_print="$range_print"$'\n'Day$SS$'\t'$SSS$range_d
-			prHelpf $range_h $n && range_print="$range_print"$'\n'Hour$SS$'\t'$SSS$range_h
-			prHelpf $range_m $n && range_print="$range_print"$'\n'Min$SS$'\t'$SSS$range_m
+			((n = ${#range}+SCL+1)) #range in seconds is the longest string
+			prHelpf ${OPTTy:+${bc[0]}} $n && range_pr=Year$SS$'\t'$SSS${bc[0]}
+			prHelpf ${OPTTmo:+${bc[1]}} $n && range_pr="$range_pr"$'\n'Month$SS$'\t'$SSS${bc[1]}
+			prHelpf ${OPTTw:+${bc[2]}} $n && range_pr="$range_pr"$'\n'Week$SS$'\t'$SSS${bc[2]}
+			prHelpf ${OPTTd:+${bc[3]}} $n && range_pr="$range_pr"$'\n'Day$SS$'\t'$SSS${bc[3]}
+			prHelpf ${OPTTh:+${bc[4]}} $n && range_pr="$range_pr"$'\n'Hour$SS$'\t'$SSS${bc[4]}
+			prHelpf ${OPTTm:+${bc[5]}} $n && range_pr="$range_pr"$'\n'Min$SS$'\t'$SSS${bc[5]}
 			prHelpf $range $((n - (SCL>0 ? (SCL+1) : 0) ))
-			range_print="$range_print"$'\n'Sec$SS$'\t'$SSS$range
-			range_print="${range_print#[$IFS]}"
+			range_pr="$range_pr"$'\n'Sec$SS$'\t'$SSS$range
+			range_pr="${range_pr#[$IFS]}"
 			#https://www.themathdoctors.org/should-we-put-zero-before-a-decimal-point/
 			((OPTLAYOUT>1)) && { 	p= q=. ;for ((p=0;p<SCL;++p)) ;do q="${q}0" ;done
-				range_print="${range_print// ./0.}" range_print="${range_print}${q}"
-			}
+				range_pr="${range_pr// ./0.}" range_pr="${range_pr}${q}" ;}
 		fi
-	fi  #2>/dev/null
+	fi
 
 	#set printing array with shell results
 	sh=("$y" "$mo" "$w" "$d"  "$h" "$m" "$s")
@@ -809,7 +805,7 @@ mainf()
 			INTERVALS
 	fi
 	((OPTVERBOSE<2 || OPTVERBOSE>2)) && printf '%dY %02dM %02dW %02dD  %02dh %02dm %02ds\n' "${sh[@]}"
-	((OPTVERBOSE<3)) && printf '%s\n' "${range_print:-$range secs}"
+	((OPTVERBOSE<3)) && printf '%s\n' "${range_pr:-$range secs}"
 
 	return ${ret:-0}
 }
@@ -976,7 +972,7 @@ done
 shift $((OPTIND -1)); unset opt
 
 #set proper environment!
-SCL="${SCL:-2}"  #scale defaults
+SCL="${SCL:-1}"  #scale defaults
 ((OPTU)) && TZ=UTC  #set UTC time zone
 export TZ
 
@@ -1016,6 +1012,7 @@ then 	OPTT=1 OPTVERBOSE=2 OPTLAYOUT=
 		[mM]) 	OPTTm=1;;
 		[sS]) 	OPTTs=1;;
 	esac ;set -- "${@:1:$#-1}"
+else 	OPTTy=1 OPTTmo=1 OPTTw=1 OPTTd=1 OPTTh=1 OPTTm=1 OPTTs=1
 fi ;unset opt
 #caveat: `gnu date' understands `-d[a-z]', do `-d[a-z]0' to pass.
 [[ $1 = [a-zA-Z] || $2 = [a-zA-Z] ]] && { 	echo "err: illegal user input" >&2 ;exit 2 ;} 

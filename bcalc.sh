@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.19  mar/2022  by mountaineerbr
+# v0.14.20  jun/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -464,7 +464,7 @@ do 	case $opt in
 		,) 	OPTDEC=${OPTDEC:0:1}, ;;
 		#change input/output decimal separator
 		\.) 	OPTDEC=${OPTDEC:0:1}. ;;
-		#scale
+		#scale (was -s)
 		[0-9]) 	OPTS="$OPTS$opt" ;;
 		-) 	OPTS= ;;
 		#load or print bc extensions
@@ -507,7 +507,7 @@ EQ="$*" ;[[ ! -t 0 && $#+OPTN+OPTP -eq 0 ]] && EQ=$(</dev/stdin)
 EQ_ORIG="$EQ" EQ="${EQ%;}" EQ="${EQ//[$'\t\n']/ }"
 
 #retrieve special vars from record file?
-if [[ -s "$BCRECFILE" ]]
+if [[ -e "$BCRECFILE" ]]
 then
 	#opt fun
 	#add note to record
@@ -532,8 +532,8 @@ then
 		eqind="${eqvar//[^0-9]}"
 		aleft="${subeq%%"$eqvar"*}" aright="${subeq##*"$eqvar"}"
 		((eqind)) || eqind=$LASTIND
-		((eqind > LASTIND)) && { echo "err: invalid index reference -- $eqvar" >&2 ;exit 1 ;}
-		recvar=$(awk "NR == $eqind { print \$1 }" "$BCRECFILE")
+		((eqind > LASTIND)) && { 	echo "err: invalid index reference -- $eqvar" >&2 ;exit 1 ;}
+		recvar=$(awk "NR == $eqind { 	print \$1 }" "$BCRECFILE")
 
 		[[ ${EQ// } = "${eqvar:-@%@%}" ]] && SIMPLEVAREQ=1 LASTIND=$eqind
 		EQ="${EQ//"$aleft$eqvar$aright"/$aleft$recvar$aright}" ;[[ $EQ ]] || exit
@@ -583,14 +583,20 @@ then 	echo "$recordout" >>"$BCRECFILE"
 fi
 unset recordout lastres lasteq lastdate lastnote timestamp
 
-#format and print result
-#add thousand separator if opt -t is set
+#add thousand separator if -t
 if ((OPTT))
 then 	RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
-#trim trailing zeroes, skip if any opt -ce is set
+#trim trailing zeroes, skip if -se
 elif [[ ! "$OPTE$OPTS" ]]
 then 	if [[ $BASH_VERSION ]]
-	then 	RES=$(bc <<<"define trunc(x){auto os;scale=${OPTS:-200};os=scale; for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}; trunc($RES)")  #bc hack
+	then 	RES=$(bc <<<"define trunc(x) {
+			auto os;
+			scale=${OPTS:-200};
+			os=scale;
+			for(scale=0;scale<=os;scale++)
+				if(x==x/1){x/=1;scale=os;return x};
+			};
+			trunc($RES);")  #bc hack
 	else
 		if [[ $RES = *[.]*[!0]${RES##*[!0]} ]]
 		then 	RES="${RES%${RES##*[!0]}}"
@@ -600,11 +606,10 @@ then 	if [[ $BASH_VERSION ]]
 	fi
 fi
 
+#swap output decimal and thousands delimiters?
+[[ $OPTDEC = ?, || $OPTDEC = , ]] && RES="${RES//./@}" RES="${RES//,/.}" RES="${RES//@/,}"
 #print special variable index, too?
 ((OPTV && LASTIND)) && RES+="	 #$LASTIND#"
 
-#swap output decimal and thousands delimiters?
-if [[ $OPTDEC = ?, ]]
-then 	tr ., ,. <<<"$RES"
-else 	echo "$RES"
-fi
+echo "$RES"
+
