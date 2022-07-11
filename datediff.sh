@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.13  jun/2022  mountaineerbr  GPLv3+
+# v0.19.14  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -749,12 +749,12 @@ mainf()
 			range_pr="${range_pr# | }"
 		else 	#layout two
 			((n = ${#range}+SCL+1)) #range in seconds is the longest string
-			prHelpf ${OPTTy:+${bc[0]}} $n && range_pr=Year$SS$'\t'$SSS${bc[0]}
-			prHelpf ${OPTTmo:+${bc[1]}} $n && range_pr="$range_pr"$'\n'Month$SS$'\t'$SSS${bc[1]}
-			prHelpf ${OPTTw:+${bc[2]}} $n && range_pr="$range_pr"$'\n'Week$SS$'\t'$SSS${bc[2]}
-			prHelpf ${OPTTd:+${bc[3]}} $n && range_pr="$range_pr"$'\n'Day$SS$'\t'$SSS${bc[3]}
-			prHelpf ${OPTTh:+${bc[4]}} $n && range_pr="$range_pr"$'\n'Hour$SS$'\t'$SSS${bc[4]}
-			prHelpf ${OPTTm:+${bc[5]}} $n && range_pr="$range_pr"$'\n'Min$SS$'\t'$SSS${bc[5]}
+			prHelpf ${bc[0]} $n && range_pr=Year$SS$'\t'$SSS${bc[0]}
+			prHelpf ${bc[1]} $n && range_pr="$range_pr"$'\n'Month$SS$'\t'$SSS${bc[1]}
+			prHelpf ${bc[2]} $n && range_pr="$range_pr"$'\n'Week$SS$'\t'$SSS${bc[2]}
+			prHelpf ${bc[3]} $n && range_pr="$range_pr"$'\n'Day$SS$'\t'$SSS${bc[3]}
+			prHelpf ${bc[4]} $n && range_pr="$range_pr"$'\n'Hour$SS$'\t'$SSS${bc[4]}
+			prHelpf ${bc[5]} $n && range_pr="$range_pr"$'\n'Min$SS$'\t'$SSS${bc[5]}
 			prHelpf $range $((n - (SCL>0 ? (SCL+1) : 0) ))
 			range_pr="$range_pr"$'\n'Sec$SS$'\t'$SSS$range
 			range_pr="${range_pr#[$IFS]}"
