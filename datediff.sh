@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.12  jun/2022  mountaineerbr  GPLv3+
+# v0.19.13  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -324,7 +324,7 @@ mainf()
 
 	(($# == 1)) && set -- '' "$1"
 
-	#unix times from input string (when `date' package is available)
+	#warp `date' when available
 	if 	unix1=$(datefun "${1:-+%s}" ${1:++%s}) &&
 		unix2=$(datefun "${2:-+%s}" ${2:++%s})
 	then 	{
@@ -343,16 +343,14 @@ mainf()
 			set -- "$2" "$1" "${@:3}"
 		fi
 	else 	unset unix1 unix2
+		#set default date -- AD
+		[[ ! $1 || ! $2 ]] && {
+			printf -v now "%(${TIME_ISO8601_FMT})T" -1 \
+			|| now=1970-01-01T00:00:00
+		} 2>/dev/null
+		[[ ! $1 ]] && { 	set -- "${now}" "${@:2}"      ;date1_iso8601="$now" ;}
+		[[ ! $2 ]] && { 	set -- "$1" "${now}" "${@:3}" ;date2_iso8601="$now" ;}
 	fi
-	
-	#set default date -- AD
-	[[ ! $1 || ! $2 ]] && {
-		printf -v now "%(${TIME_ISO8601_FMT})T" -1 \
-		|| now=$(datefun -Iseconds) \
-		|| now=1970-01-01T00:00:00
-	} 2>/dev/null
-	[[ ! $1 ]] && { 	set -- "${now}" "${@:2}"      ;date1_iso8601="$now" ;}
-	[[ ! $2 ]] && { 	set -- "$1" "${now}" "${@:3}" ;date2_iso8601="$now" ;}
 
 	#load ISO8601 dates from `date' or user input
 	inputA="${date1_iso8601:-$1}"
@@ -734,9 +732,9 @@ mainf()
 		(${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) ) ); /**  YEARS  **/
 		(${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) ) ); /**  MONTHS **/
 		(${range:-0} / 604800); /**  WEEKS  **/
-		(${range:-0} / 86400); /**  DAYS   **/
-		(${range:-0} / 3600); /**  HOURS  **/
-		(${range:-0} / 60); /** MINUTES **/") )
+		(${range:-0} / 86400);  /**  DAYS   **/
+		(${range:-0} / 3600);   /**  HOURS  **/
+		(${range:-0} / 60);     /** MINUTES **/") )
 		#ARRAY:  0=YEARS  1=MONTHS  2=WEEKS  3=DAYS  4=HOURS  5=MINUTES
 	then 	#choose layout of single units
 		if ((OPTT || !OPTLAYOUT))
