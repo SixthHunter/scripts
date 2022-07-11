@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.14.20  jun/2022  by mountaineerbr
+# v0.14.21  jun/2022  by mountaineerbr
 
 #record file path (optional)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -553,7 +553,7 @@ fi
 
 #checks
 #did input change?
-[[ $OPTV && $EQ != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
+((OPTV>1)) && [[ $EQ != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
 #multiple decimal separators: "1.2." "1,2," "1.2,3."  ",.,"  
 if [[
 	"$EQ" =~ [0-9]*[.][0-9]*[.] ||
