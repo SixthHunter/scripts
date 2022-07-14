@@ -1,5 +1,5 @@
-# bcalc_ext.txt -- bash bc wrapper extensions
-# mar/2021  by mountaineerbr
+# bcalc_ext.bc -- bash bc wrapper extensions
+# jun/2022  by mountaineerbr
 
 # 8 888888888o       ,o888888o.              8 8888888888   `8.`8888.      ,8' 
 # 8 8888    `88.    8888     `88.            8 8888          `8.`8888.    ,8'  
@@ -33,6 +33,16 @@
 # 8b   `8.`8888.  8 8888 `8 8888       ,8P  8      `Y8o. `Y8 8b   `8.`8888. 
 # `8b.  ;8.`8888  8 8888  ` 8888     ,88'   8         `Y8o.` `8b.  ;8.`8888 
 #  `Y8888P ,88P'  8 8888     `8888888P'     8            `Yo  `Y8888P ,88P' 
+
+### MaxScale - Get the maximum scale from your GNU BC
+### BC is currently only 32bit in all cases. 
+### The package manager recognizes that it might have to install 32bit libraries for a 64 bit environment, but continue to be 32 bits libraries.
+### That is why your maximum scale is always 2147483647 (though is safer to use 2147483647, because by reason of the minus or the decimal symbol in case of negative or decimal operations by reason of the minus and decimal symbol) 1111111111111111111111111111110 bits (check https://github.com/abueesp/mathstuffinc/blob/master/bitscalc.py). 
+### If you try to add just 1 bit more, you will get a fatal error 'Out of memory for malloc'.
+### Which explain that more memory can't be allocated, even if there is not an overflow because you are running a >32 bits computer.
+### If you want to use bc in bash (such as $(echo "scale=2147483646;1/6" | bc) | tee -a division) you will get 'bash: xrealloc: cannot allocate 18446744071562067968 bytes;' (2^31 digits represent A LOT of bytes for a normal 32/64 bits computer memory!) and 'Out of memory malloc' in case you want to assign the value to a variable or simply copy and paste outside bc. However, you can still operate with such a large number inside bc without problems while you don't exceed 2^31 digits. Isn't that awesome?"
+#scale=2147483646
+
 
 /*************************************
 
@@ -85,8 +95,93 @@ gh       = 5.585                /* proton g factor (lande factor) */
 grav     = 6.673*10^(-11)       /* gravitational constant m^3/kg*s^2 */
 g        = 9.80665              /* acceleration due to gravity on surface of earth in m/s^2 */
 lambdac  = 2.42631*10^(-12)     /* compton wavelength of the electron m */
+#!/usr/bin/bc
+
+# bc integer functions I've found useful
+# while systems programming in the unix environment.
+
+# License: LGPLv2
+# Author:
+#    http://www.pixelbeat.org/
+# Notes:
+#    I only use bc when python is not available.
+#    Personally I have this file in ~/bin/bc so
+#    that I can just invoke bc as normal and have these
+#    extra functions available.
+# Changes:
+#    V0.1, 11 Apr 2007, Initial release
 
 
+define min(x,y) {
+    if (x<y) return x
+    return y
+}
+
+define max(x,y) {
+    if (x>y) return x
+    return y
+}
+
+define abs(x) {
+    if (x<0) return -x
+    return x
+}
+
+/* take integer part */
+define int(x) {
+    auto old_scale   /* variables global by default */
+    old_scale=scale  /* scale is global */
+    scale=0; ret=x/1
+    scale=old_scale
+    return ret
+}
+
+/* round to nearest integer */
+define round(x) {
+    if (x<0) x-=.5 else x+=.5
+    return int(x)
+}
+
+/* smallest integer >= arg */
+define ceil(x) {
+    auto intx
+    intx=int(x)
+    if (intx<x) intx+=1
+    return intx
+}
+
+/* largest integer <= arg */
+define floor(x) {
+    return -ceil(-x)
+}
+
+/* round x to previous multiple of y */
+define round_down(x,y) {
+    return y*floor(x/y)
+}
+
+/* round x to next multiple of y */
+define round_up(x,y) {
+    return y*ceil(x/y)
+}
+
+/* round x to nearest multiple of y */
+define round_to(x,y) {
+    return y*round(x/y)
+}
+
+/* Greatest Common Divisor or Highest Common Factor of x and y */
+/* Note when people say Lowest Common Denominator they usually mean this */
+define gcd(x,y) {
+     if (y==0) return x
+     return gcd(y,x%y) /* anything that divides into x and y also divides into the remainder of x/y */
+}
+
+/* Lowest Common Multiple of x and y */
+/* Lowest Common Denominator of fractions is LCM of the denominators */
+define lcm(x,y) {
+    return (x*y/gcd(x,y))
+}
 /********************************
 
   bc program:	extensions.bc
@@ -478,97 +573,725 @@ define lcm(a,b){
 define bessel(n,x){
 	return(j(n,x))
 }
+#!/usr/local/bin/bc -l
 
+### Funcs.BC - a large number of functions for use with GNU BC
 
-#!/usr/bin/bc
+  ## Not to be regarded as suitable for any purpose
+  ## Not guaranteed to return correct answers
 
-# bc integer functions I've found useful
-# while systems programming in the unix environment.
-
-# License: LGPLv2
-# Author:
-#    http://www.pixelbeat.org/
-# Notes:
-#    I only use bc when python is not available.
-#    Personally I have this file in ~/bin/bc so
-#    that I can just invoke bc as normal and have these
-#    extra functions available.
-# Changes:
-#    V0.1, 11 Apr 2007, Initial release
-
-
-define min(x,y) {
-    if (x<y) return x
-    return y
+scale=50;
+define pi() {
+  auto s;
+  if(scale==(s=scale(pi_)))return pi_
+  if(scale<s)return pi_/1
+  scale+=5;pi_=a(1)*4;scale-=5
+  return pi_/1
 }
+e = e(1);
+define phi(){return((1+sqrt(5))/2)} ; phi = phi()
+define psi(){return((1-sqrt(5))/2)} ; psi = psi()
 
-define max(x,y) {
-    if (x>y) return x
-    return y
-}
+# Reset base to ten
+obase=ibase=A;
 
-define abs(x) {
-    if (x<0) return -x
-    return x
-}
+## Integer and Rounding
 
-/* take integer part */
-define int(x) {
-    auto old_scale   /* variables global by default */
-    old_scale=scale  /* scale is global */
-    scale=0; ret=x/1
-    scale=old_scale
-    return ret
-}
+# Round to next integer nearest 0:  -1.99 -> 1, 0.99 -> 0
+define int(x)   { auto os;os=scale;scale=0;x/=1;scale=os;return(x) } 
 
-/* round to nearest integer */
-define round(x) {
-    if (x<0) x-=.5 else x+=.5
-    return int(x)
-}
-
-/* smallest integer >= arg */
-define ceil(x) {
-    auto intx
-    intx=int(x)
-    if (intx<x) intx+=1
-    return intx
-}
-
-/* largest integer <= arg */
+# Round down to integer below x
 define floor(x) {
-    return -ceil(-x)
+  auto os,xx;os=scale;scale=0
+  xx=x/1;if(xx>x).=xx--
+  scale=os;return(xx)
 }
 
-/* round x to previous multiple of y */
-define round_down(x,y) {
-    return y*floor(x/y)
+# Round up to integer above x
+define ceil(x) {
+  auto os,xx;x=-x;os=scale;scale=0
+  xx=x/1;if(xx>x).=xx--
+  scale=os;return(-xx)
 }
 
-/* round x to next multiple of y */
-define round_up(x,y) {
-    return y*ceil(x/y)
+# Fractional part of x:  12.345 -> 0.345
+define frac(x) {
+  auto os,xx;os=scale;scale=0
+  xx=x/1;if(xx>x).=xx--
+  scale=os;return(x-xx)
 }
 
-/* round x to nearest multiple of y */
-define round_to(x,y) {
-    return y*round(x/y)
+# Absolute value of x
+define abs(x) { if(x<0)return(-x)else return(x) }
+
+# Sign of x
+define sgn(x) { if(x<0)return(-1)else if(x>0)return(1);return(0) }
+
+# Round x up to next multiple of y
+define round_up(  x,y) { return(y*ceil( x/y )) }
+
+# Round x down to previous multiple of y
+define round_down(x,y) { return(y*floor(x/y )) }
+
+# Round x to the nearest multiple of y
+define round(     x,y) {
+  auto os,oib;
+  os=scale;oib=ibase
+  .=scale++;ibase=A
+    y*=floor(x/y+.5)
+  ibase=oib;scale=os
+  return y
 }
 
-/* Greatest Common Divisor or Highest Common Factor of x and y */
-/* Note when people say Lowest Common Denominator they usually mean this */
+# Find the remainder of x/y
+define int_remainder(x,y) {
+  auto os;
+  os=scale;scale=0
+   x/=1;y/=1;x%=y
+  scale=os
+  return(x)
+}
+define remainder(x,y) {
+  os=scale;scale=0
+   if(x==x/1&&y==y/1){scale=os;return int_remainder(x,y)}
+  scale=os
+  return(x-round_down(x,y))
+}
+
+# Greatest common divisor of x and y
+define int_gcd(x,y) {
+  auto r,os;
+  os=scale;scale=0
+  x/=1;y/=1
+  while(y>0){r=x%y;x=y;y=r}
+  scale=os
+  return(x)
+}
 define gcd(x,y) {
-     if (y==0) return x
-     return gcd(y,x%y) /* anything that divides into x and y also divides into the remainder of x/y */
+  auto r,os;
+  os=scale;scale=0
+   if(x==x/1&&y==y/1){scale=os;return int_gcd(x,y)}
+  scale=os
+  while(y>0){r=remainder(x,y);x=y;y=r}
+  return(x)
 }
 
-/* Lowest Common Multiple of x and y */
-/* Lowest Common Denominator of fractions is LCM of the denominators */
-define lcm(x,y) {
-    return (x*y/gcd(x,y))
+# Lowest common multiple of x and y
+define int_lcm(x,y) {
+  auto r,m,os;
+  os=scale;scale=0
+  x/=1;y/=1
+  m=x*y
+  while(y>0){r=x%y;x=y;y=r}
+  m/=x
+  scale=os
+  return(m)
+}
+define lcm(x,y) { return (x*y/gcd(x,y)) }
+
+# Remove largest possible power of 2 from x
+define oddpart(x){
+  auto os;
+  os=scale;scale=0;x/=1
+  if(x==0){scale=os;return 1}
+  while(!x%2)x/=2
+  scale=os;return x
 }
 
+# Largest power of 2 in x
+define evenpart(x) {
+  auto os;
+  os=scale;scale=0
+  x/=oddpart(x/1)
+  scale=os;return x
+}
 
+## Trig / Hyperbolic Trig
+
+# Sine
+define sin(x) { return s(x) } # alias for standard library
+# Cosine
+define c(x)   { return s(x+pi()/2) } # as fast or faster than
+define cos(x) { return c(x)        } # . standard library
+# Tangent
+define tan(x)   { auto c;c=c(x);if(c==0)c=A^-scale;return(s(x)/c) }
+
+# Secant
+define sec(x)   { auto c;c=c(x);if(c==0)c=A^-scale;return(   1/c) }
+# Cosecant
+define cosec(x) { auto s;s=s(x);if(s==0)s=A^-scale;return(   1/s) }
+# Cotangent
+define cotan(x) { auto s;s=s(x);if(s==0)s=A^-scale;return(c(x)/s) }
+
+# Arcsine
+define arcsin(x) { if(x==-1||x==1)return(pi()/2*x);return( a(x/sqrt(1-x*x)) ) } 
+# Arccosine
+define arccos(x) { if(x==0)return(0);return pi()/2-arcsin(x) }
+
+# Arctangent (one argument)
+define arctan(x)  { return a(x) } # alias for standard library
+
+# Arctangent (two arguments)
+define arctan2(x,y) { 
+  auto p;
+  if(x==0&&y==0)return(0)
+  p=(1-sgn(y))*pi()*(2*(x>=0)-1)/2
+  if(x==0||y==0)return(p)
+  return(p+a(x/y))
+}
+
+# Arcsecant
+define arcsec(x)      { return( a(x/sqrt(x*x-1)) ) }
+# Arccosecant
+define arccosec(x)    { return( a(x/sqrt(x*x-1))+pi()*(sgn(x)-1)/2 ) }
+# Arccotangent (one argument)
+define arccotan(x)    { return( a(x)+pi()/2 ) }
+# Arccotangent (two arguments)
+define arccotan2(x,y) { return( arctan(x,y)+pi()/2 ) }
+
+# Hyperbolic Sine
+define sinh(x) { auto t;t=e(x);return((t-1/t)/2) }
+# Hyperbolic Cosine
+define cosh(x) { auto t;t=e(x);return((t+1/t)/2) }
+# Hyperbolic Tangent
+define tanh(x) { auto t;t=e(x+x)-1;return(t/(t+2)) }
+
+# Hyperbolic Secant
+define sech(x)   { auto t;t=e(x);return(2/(t+1/t)) }
+# Hyperbolic Cosecant
+define cosech(x) { auto t;t=e(x);return(2/(t-1/t)) }
+# Hyperbolic Cotangent
+define coth(x)   { auto t;t=e(x+x)-1;return((t+2)/t) }
+
+# Hyperbolic Arcsine
+define arcsinh(x) { return( l(x+sqrt(x*x+1)) ) }
+# Hyperbolic Arccosine
+define arccosh(x) { return( l(x+sqrt(x*x-1)) ) }
+# Hyperbolic Arctangent
+define arctanh(x) { return( l((1+x)/(1-x))/2 ) }
+
+# Hyperbolic Arcsecant
+define arcsech(x)   { return( l((sqrt(1-x*x)+1)/x) ) }
+# Hyperbolic Arccosecant
+define arccosech(x) { return( l((sqrt(1+x*x)*sgn(x)+1)/x) ) }
+# Hyperbolic Arccotangent
+define arccoth(x)   { return( l((x+1)/(x-1))/2 ) }
+
+# Length of the diagonal vector (0,0)-(x,y) [pythagoras]
+define pyth(x,y) { return(sqrt(x*x+y*y)) }
+define pyth3(x,y,z) { return(sqrt(x*x+y*y+z*z)) }
+
+# Gudermannian Function
+define gudermann(x)    { return 2*(a(e(x))-a(1)) }
+# Inverse Gudermannian Function
+define arcgudermann(x) {
+  return arctanh(s(x))
+}
+
+# Bessel function
+define besselj(n,x) { return j(n,x) } # alias for standard library
+
+## Exponential / Logs
+
+# Exponential e^x
+define exp(x) { return e(x) } # alias for standard library
+
+# Natural Logarithm (base e)
+define ln(x) {
+  auto os,len,ln;
+  if(x< 0){print "ln error: logarithm of a negative number\n";return 0}
+  if(x==0)print "ln error: logarithm of zero; negative infinity\n"
+  len=length(x)-scale(x)-1
+  if(len<A)return l(x);
+  os=scale;scale+=length(len)+1
+  ln=l(x/A^len)+len*l(A)
+  scale=os
+  return ln/1
+} # speed improvement on standard library
+
+# workhorse function for pow and log - new, less clever version
+# Helps determine whether a fractional power is legitimate for a negative number
+# . expects to be fed a positive value
+# . returns -odd for even/odd; odd2 for odd1/odd2;
+#           even for odd/even;   -2 for irrational
+# . note that the return value is the denominator of the fraction if the
+#   fraction is rational, and the sign of the return value states whether
+#   the numerator is odd (positive) or even (negative)
+# . since even/even is not possible, -2 is used to signify irrational
+define id_frac2_(y){
+  auto os,oib,es,eps,lim,max,p,max2,i,cf[],f[],n,d,t;
+  os=scale
+  if(cf_max){
+    # cf.bc is present!
+    .=cf_new(cf[],y);if(scale(cf[0]))return -2;
+    .=frac_from_cf(f[],cf[],1)
+    d=f[0];scale=0;if(f[1]%2==0)d=-d;scale=os
+   return d
+  }
+  oib=ibase;ibase=A
+  scale=0
+   es=3*os/4
+  scale=os
+   eps=A^-es
+   y+=eps/A
+  scale=es
+   y/=1
+  scale=0
+  if(y<0)y=-y
+  d=y-(n=y/1)
+  if(d<eps){t=2*(n%2)-1;scale=os;ibase=oib;return t}#integers are x/1
+  t=y/2;t=y-t-t
+  # Find numerator and denominator of fraction, if any
+  lim=A*A;max2=A^5*(max=A^int(os/2));p=1
+  i=0;y=t
+  while(1) {
+    scale=es;y=1/y;scale=0
+    y-=(t=cf[++i]=y/1);p*=1+t
+    if(i>lim||(max<p&&p<max2)){cf[i=1]=-2;break}#escape if number seems irrational    
+    if((p>max2||3*length(t)>es+es)&&i>1){cf[i--]=0;break}#cheat: assume rational
+    if(y==0)break;#completely rational
+  }
+  n=1;d=cf[i]
+  if(i==0){print "id_frac2_: something is wrong; y=",y,", d=",d,"\n"}
+  if(d!=-2&&i)while(--i){d=n+cf[i]*(t=d);n=t}
+  if(d<A^os){d*=2*(n%2)-1}else{d=-2}
+  scale=os;ibase=oib
+  return d;
+}
+
+# raise x to integer power y faster than bc's x^y
+# . it seems bc (at time of writing) uses
+# . an O(n) repeated multiplication algorithm
+# . for the ^ operator, which is inefficient given
+# . that there is a simple O(log n) alternative:
+define fastintpow__(x,y) {
+  auto r,hy;
+  if(y==0)return(1)
+  if(y==1)return(x)
+  r=fastintpow__(x,hy=y/2)
+  r*=r;if(hy+hy<y)r*=x
+  return( r )
+}
+define fastintpow_(x,y) {
+  auto ix,os;
+  if(y<0)return fastintpow_(1/x,-y)
+  if(y==0)return(1)
+  if(y==1)return(x)
+  if(x==1)return(1)
+  os=scale;scale=0
+  if(x==-1){y%=2;y+=y;scale=os;return 1-y}
+  # bc is still faster for integers
+  if(x==(ix=x/1)){scale=os;return ix^y}
+  # ...and small no. of d.p.s, but not for values <= 2
+  if(scale(x)<3&&x>2){scale=os;return x^y}
+  scale=os;x/=1;scale=0
+  x=fastintpow__(x,y);
+  scale=os;return x;
+}
+
+# Raise x to a fractional power faster than e^(y*l(x))
+define fastfracpow_(x,y) {
+  auto f,yy,inv;
+  inv=0;if(y<0){y=-y;inv=1}
+  y-=int(y)
+  if(y==0)return 1;
+  if((yy=y*2^C)!=int(yy)){x=l(x);if(inv)x=-x;return e(y/1*x)}
+  # faster using square roots for rational binary fractions
+  # where denominator <= 8192
+  x=sqrt(x)
+  for(f=1;y&&x!=1;x=sqrt(x))if(y+=y>=1){.=y--;f*=x}
+  if(inv)f=1/f;
+  return f;
+}
+
+# Find the yth root of x where y is integer
+define fastintroot_(x,y) {
+  auto os,d,r,ys,eps;
+  os=scale;scale=0;y/=1;scale=os
+  if(y<0){x=1/x;y=-y}
+  if(y==1){return x}
+  if(y>=x-1){return fastfracpow_(x,1/y)}
+  if(y*int((d=2^F)/y)==d){
+    r=1;while(r+=r<=y)x=sqrt(x)
+    return x
+  }
+  scale=length(y)-scale(y);if(scale<5)scale=5;r=e(ln(x)/y)
+  scale=os+5;if(scale<5)scale=5
+  d=1;eps=A^(3-scale)
+  ys=y-1
+  while(d>eps){
+    d=r;r=(ys*r+x/fastintpow_(r,ys))/y
+    d-=r;if(d<0)d=-d
+  }
+  scale=os
+  return r/1
+}
+
+# Raise x to the y-th power
+define pow(x,y) {
+ auto os,p,ix,iy,fy,dn,s;
+ if(y==0) return 1
+ if(x==0) return 0
+ if(0<x&&x<1){x=1/x;y=-y}
+ os=scale;scale=0
+  ix=x/1;iy=y/1;fy=y-iy;dn=0
+ scale=os;#scale=length(x/1)
+ if(y!=iy&&x<0){
+   dn=id_frac2_(y)# -ve implies even numerator
+   scale=0;if(dn%2){# odd denominator
+     scale=os
+     if(dn<0)return  pow(-x,y) # even/odd
+     /*else*/return -pow(-x,y) #  odd/odd
+   }
+   print "pow error: "
+   if(dn>0) print "even root"
+   if(dn<0) print "irrational power"
+   print " of a negative number\n"
+   scale=os;return 0
+ }
+ if(y==iy) {
+   if(x==ix){p=fastintpow_(ix,iy);if(iy>0){scale=0;p/=1};scale=os;return p/1}
+   scale+=scale;p=fastintpow_(x,iy);scale=os;return p/1
+ }
+ if((dn=id_frac2_(y))!=-2){ #accurate rational roots (sometimes slower)
+   if(dn<0)dn=-dn
+   s=1;if(y<0){y=-y;s=-1}
+   p=y*dn+1/2;scale=0;p/=1;scale=os
+   if(p<A^3)x=fastintpow_(x,p)
+   x=fastintroot_(x,dn)
+   if(p>=A^3)x=fastintpow_(x,p)
+   if(s<0)x=1/x
+   return x
+ }
+ p=fastintpow_(ix,iy)*fastfracpow_(x,fy);
+ scale=os+os
+ if(ix)p*=fastintpow_(x/ix,iy)
+ scale=os
+ return p/1
+ #The above is usually faster and more accurate than
+ # return( e(y*l(x)) );
+}
+
+# y-th root of x [ x^(1/y) ]
+define root(x,y) {
+  return pow(x,1/y)
+}
+
+# Specific cube root function
+# = stripped down version of fastintroot_(x,3)
+define cbrt(x) {
+  auto os,d,r,eps;
+  if(x<0)return -cbrt(-x)
+  if(x==0)return 0
+  os=scale;scale=0;eps=A^(scale/3)
+  if(x<eps){scale=os;return 1/cbrt(1/x)}
+  scale=5;r=e(ln(x)/3)
+  scale=os+5;if(scale<5)scale=5
+  d=1;eps=A^(3-scale)
+  while(d>eps){
+    d=r;r=(r+r+x/(r*r))/3
+    d-=r;if(d<0)d=-d
+  }
+  scale=os
+  return r/1
+}
+
+# Logarithm of x in given base:  log(2, 32) = 5 because 2^5 = 32
+#  tries to return a real answer where possible when given negative numbers
+#  e.g.     log(-2,  64) = 6 because (-2)^6 =   64
+#  likewise log(-2,-128) = 7 because (-2)^7 = -128
+define log(base,x) {
+  auto os,i,l,sx,dn,dnm2;
+  if(base==x)return 1;
+  if(x==0){print "log error: logarithm of zero; negative infinity\n";     return  l(0)}
+  if(x==1)return 0;
+  if(base==0){print "log error: zero-based logarithm\n";                  return    0 }
+  if(base==1){print "log error: one-based logarithm; positive infinity\n";return -l(0)}
+  scale+=6
+  if((-1<base&&base<0)||(0<base&&base<1)){x=-log(1/base,x);scale-=6;return x/1}
+  if((-1<x   &&   x<0)||(0<x   &&   x<1)){x=-log(base,1/x);scale-=6;return x/1}
+  if(base<0){
+    sx=1;if(x<0){x=-x;sx=-1}
+    l=log(-base,x)
+    dn=id_frac2_(l)
+    os=scale;scale=0;dnm2=dn%2;scale=os
+    if(dnm2&&dn*sx<0){scale-=6;return l/1}
+    print "log error: -ve base: "
+    if(dnm2)print "wrong sign for "
+    print "implied "
+    if(dnm2)print "odd root/integer power\n"
+    if(!dnm2){
+      if(dn!=-2)print "even root\n"
+      if(dn==-2)print "irrational power\n"
+    }
+    scale-=6;return 0;
+  }
+  if(x<0){
+    print "log error: +ve base: logarithm of a negative number\n"
+    scale-=6;return 0;
+  }
+  x=ln(x)/ln(base);scale-=6;return x/1
+}
+
+# Integer-only logarithm of x in given base
+# (compare digits function in digits.bc)
+define int_log(base,x) { 
+ auto os,p,c;
+ if(0<x&&x<1) {return -int_log(base,1/x)}
+ os=scale;scale=0;base/=1;x/=1
+  if(base<2)base=ibase;
+  if(x==0)    {scale=os;return  1-base*A^os}
+  if(x<base)  {scale=os;return  0    }
+  c=length(x) # cheat and use what bc knows about decimal length
+  if(base==A){scale=os;return c-1}
+  if(base<A){if(x>A){c*=int_log(base,A);c-=2*(base<4)}else{c=0}}else{c/=length(base)+1}
+  p=base^c;while(p<=x){.=c++;p*=base}
+  scale=os;return(c-1)
+}
+
+# Lambert's W function 0 branch; Numerically solves w*e(w) = x for w
+# * is slow to converge near -1/e at high scales
+define lambertw0(x) {
+  auto oib, a, b, w, ow, lx, ew, e1, eps;
+  if(x==0) return 0;
+  oib=ibase;ibase=A
+  ew = -e(-1)
+  if (x<ew) {
+    print "lambertw0: expected argument in range [-1/e,oo)\n"
+    ibase=oib
+    return -1
+  }
+  if (x==ew) {ibase=oib;return -1}
+  # First approximation from :
+  #   http://www.desy.de/~t00fri/qcdins/texhtml/lambertw/
+  #   (A. Ringwald and F. Schrempp)
+  # via Wikipedia
+  if(x < 0){
+    w = x/ew
+  } else if(x < 500){
+    lx=l(x+1);w=0.665*(1+0.0195*lx)*lx+0.04
+  } else if((lx=length(x)-scale(x))>5000) {
+    lx*=l(A);w=lx-(1-1/lx)*l(lx)
+  } else {
+    lx=l(x);w=l(x-4)-(1-1/lx)*l(lx)
+  } 
+  # Iteration adapted from code found on Wikipedia
+  #   apparently by an anonymous user at 147.142.207.26
+  #   and later another at 87.68.32.52
+  ow = 0
+  eps = A^-scale
+  scale += 5
+  e1 = e(1)
+  while(abs(ow-w)>eps&&w>-1){
+    ow = w
+    if(x>0){ew=pow(e1,w)}else{ew=e(w)}
+    a = w*ew
+    b = a+ew
+    a -= x;
+    if(a==0)break
+    b = b/a - 1 + 1/(w+1)
+    w -= 1/b
+    if(x<-0.367)w-=eps
+  }
+  scale -= 5
+  ibase=oib
+  return w/1
+}
+
+# Lambert's W function -1 branch; Numerically solves w*e(w) = x for w
+# * is slow to converge near -1/e at high scales
+define lambertw_1(x) {
+  auto oib,os,oow,ow,w,ew,eps,d,iters;
+  oib=ibase;ibase=A
+  ew = -e(-1)
+  if(ew>x||x>=0) {
+    print "lambertw_1: expected argument in [-1/e,0)\n"
+    ibase=oib
+    if(x==0)return 1-A^scale
+    if(x>0)return 0
+    return -1
+  }
+  if(x==ew) return -1;
+  os=scale
+  eps=A^-os
+  scale+=3
+  oow=ow=0
+  w=x
+  w=l(-w)
+  w-=l(-w)
+  w+=sqrt(eps)
+  iters=0
+  while(abs(ow-w)>eps){
+    oow=ow;ow=w
+    if(w==-1)break
+    w=(x*e(-w)+w*w)/(w+1)
+    if(iters++==A+A||oow==w){iters=0;w-=A^-scale;scale+=2}
+  }
+  scale=os;ibase=oib
+  return w/1
+}
+
+# LambertW wrapper; takes most useful branch based on x
+# to pick a branch manually, use lambertw_1 or lambertw0 directly
+define w(x) {
+  if(x<0)return lambertw_1(x)
+  return lambertw0(x)
+}
+
+# Faster calculation of lambertw0(exp(x))
+# . avoids large intermediate value and associated slowness
+# . numerically solves x = y+ln(y) for y
+define lambertw0_exp(x) {
+  auto oy,y,eps;
+  # Actual calculation is faster for x < 160 or thereabouts
+  if(x<C*D)return lambertw0(e(x));
+  oy=0;y=l(x);y=x-y+y/x;eps=A^-scale
+  while(abs(oy-y)>eps)y=x-l(oy=y)
+  return y
+}
+
+# Shorthand alias for the above
+define w_e(x){ return lambertw0_exp(x) }
+
+# Numerically solve pow(y,y) = x for y
+define powroot(x) {
+  auto r;
+  if(x==0) {
+    print "powroot error: attempt to solve for zero\n"
+    return 0
+  }
+  if(x==1||x==-1) {return x}
+  if(x<=r=e(-e(-1))){
+    print "powroot error: unimplemented for values\n  <0";r
+    return 0
+  }
+  r = ln(x)
+  r /= w(r)
+  return r
+}
+
+## Triangular numbers
+
+# xth triangular number
+define tri(x) {
+  auto xx
+  x=x*(x+1)/2;xx=int(x)
+  if(x==xx)return(xx)
+  return(x)
+}
+
+# 'triangular root' of x
+define trirt(x) {
+  auto xx
+  x=(sqrt(1+8*x)-1)/2;xx=int(x)
+  if(x==xx)x=xx
+  return(x)
+}
+
+# Workhorse for following 2 functions
+define tri_step_(t,s) {
+  auto tt
+  t=t+(1+s*sqrt(1+8*t))/2;tt=int(t)
+  if(tt==t)return(tt)
+  return(t)
+}
+
+# Turn tri(x) into tri(x+1) without knowing x
+define tri_succ(t) {
+  return(tri_step_(t,0+1))
+}
+
+# Turn tri(x) into tri(x-1) without knowing x
+define tri_pred(t) {
+  return(tri_step_(t,0-1))
+}
+
+## Polygonal Numbers
+
+# the xth s-gonal number:
+#   e.g. poly(3, 4) = tri(4) = 1+2+3+4 = 10; poly(4, x) = x*x, etc
+define poly(s, x) {
+  auto xx
+  x*=(s/2-1)*(x-1)+1;xx=int(x);if(x==xx)x=xx
+  return x
+}
+
+# inverse of the above = polygonal root:
+#   e.g. inverse_poly(3,x)=trirt(x); inverse_poly(4,x)=sqrt(x), etc
+define inverse_poly(s, r) {
+  auto t,xx
+  t=(s-=2)-2
+  r=(sqrt(8*s*r+t*t)+t)/s/2;xx=int(r);if(r==xx)r=xx
+  return r
+}
+
+# converse of poly(); solves poly(s,x)=r for s
+#   i.e. if the xth polygonal number is r, how many sides has the polygon?
+#   e.g. if the 5th polygonal number is 15, converse_poly(5,15) = 3
+#     so the polygon must have 3 sides! (15 is the 5th triangular number)
+define converse_poly(x,r) {
+  auto xx
+  x=2*((r/x-1)/(x-1)+1);xx=int(x);if(x==xx)x=xx
+  return x
+}
+
+## Tetrahedral numbers
+
+# nth tetrahedral number
+define tet(n) { return n*(n+1)*(n+2)/6 }
+
+# tetrahedral root = inverse of the above
+define tetrt(t) {
+  auto k,c3,w;
+  if(t==0)return 0
+  if(t<0)return -2-tetrt(-t)
+  k=3^5*t*t-1
+  if(k<0){print "tetrt: unimplemented for 0<|t|<sqrt(3^-5)\n"; return 0}
+  c3=cbrt(3)
+  k=cbrt(sqrt(3*k)+3^3*t)
+  return k/c3^2+1/(c3*k)-1
+}
+
+## Arithmetic-Geometric mean
+
+define arigeomean(a,b) {
+  auto c,s;
+  if(a==b)return a;
+  s=1;if(a<0&&b<0){s=-1;a=-a;b=-b}
+  if(a<0||b<0){print "arigeomean: mismatched signs\n";return 0}
+  while(a!=b){c=(a+b)/2;a=sqrt(a*b);b=c}
+  return s*a
+}
+
+# solve n = arigeomean(x,y)
+define inv_arigeomean(n, y){
+  auto ns,ox,x,b,c,d,i,s,eps;
+  if(n==y)return n;
+  s=1;if(n<0&&y<0){s=-1;n=-n;y=-y}
+  if(n<0||y<0){print "inv_arigeomean: mismatched signs\n";return 0}  
+  if(n<y){x=y;y=n;n=x}
+  n/=y
+  scale+=2;eps=A^-scale;scale+=4
+  ns=scale
+  x=n*(1+ln(n));ox=-1
+  for(i=0;i<A;i++){
+    # try to force quadratic convergence
+    if(abs(x-ox)<eps){i=-1;break}
+    ox=x;scale+=scale
+    b=x+x/n*(n-arigeomean(1,x));
+    c=b+b/n*(n-arigeomean(1,b));
+    d=b+b-c-x
+    if(d){x=(b*b-c*x)/d}else{x=b;i=-1;break}
+    scale=ns
+  }
+  if(i!=-1){
+    # give up and converge linearly
+    x=(x+ox)/2
+    while(abs(x-ox)>eps){ox=x;x+=x/n*(n-arigeomean(1,x))}
+  }
+  x+=5*eps
+  scale-=6;return x*y/s
+}
 #!/usr/local/bin/bc -l
 
 ### Array.BC - tools for managing arrays
@@ -1373,9 +2096,7 @@ define aprintl(*a__[]) {
 # Prints the first 'count' elements of a__[]
 define aprint(*a__[],count) {
  .=aprintr(a__[],0,count-1)
-}
-
-#!/usr/local/bin/bc -l
+}#!/usr/local/bin/bc -l
 
 ### CF.BC - Continued fraction experimentation using array pass by reference
 
@@ -1689,8 +2410,6 @@ define print_convergent(x,c){
   v=cf_print_convergent(cf[],c)
   return v;
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc cf.bc
 
 ### CF_ENGEL.BC - Engel expansion experimentation using array pass by reference
@@ -1797,9 +2516,7 @@ define engel_value(en__[]) {
   .=check_cf_max_();
   p=1;v=0;for(i=0;i<cf_max&&p*=en__[i];i++)v+=1/p
   return v;
-}
-
-#!/usr/local/bin/bc -l funcs.bc cf.bc
+}#!/usr/local/bin/bc -l funcs.bc cf.bc
 
 ### CF_MISC.BC - Miscellaneous functions separated from CF.BC
 
@@ -1926,8 +2643,6 @@ define conway_box(x) {
   .=cf_conway_box(cf[],x)
   return cf_value(cf[])
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc cf.bc
 
 ### CF_SYLVESTER.BC - Sylvester expansion experimentation using array pass by reference
@@ -2019,9 +2734,7 @@ define sylvester_value(sy__[]) {
   .=check_cf_max_();
   n=0;d=1;for(i=0;i<cf_max&&p=sy__[i];i++){n=n*p+d;d*=p}
   return n/d;
-}
-
-#!/usr/local/bin/bc -l
+}#!/usr/local/bin/bc -l
 
 ### Collatz.BC - The 3x+1 or hailstones problem
 
@@ -2321,8 +3034,6 @@ define is_collatz_sg(x) {
   collatz_sum         = s
   return x
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc collatz.bc
 
 ### Collatz_Continuous.BC - Attempt to extend the Collatz iteration to
@@ -2502,8 +3213,6 @@ define collatz_invlinb(y) {
   if(!check_collatz_mode_())return 0
   return collatz_invlinb_(y,collatz_mode_-1)
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### Complex.BC - Rudimentary complex number handling for GNU BC
@@ -2991,9 +3700,7 @@ define carcsech(*c__[],x__[]){
 define carccotanh(*c__[],x__[]){
   .= cdiv(x__[],complex1[],x__[]) # x = 1/x
   .= carctanh(c__[],x__[])        # c = arctanh(x)
-}
-
-# cosconst = rootof(x = cos(x))
+}# cosconst = rootof(x = cos(x))
 
 cosconst=\
 .7390851332151606416553120876738734040134117589007574649656806357732\
@@ -3021,9 +3728,7 @@ cosconst=\
     }
     c
   }
-*/
-
-#!/usr/local/bin/bc -l
+*/#!/usr/local/bin/bc -l
 
 ### Digits.BC - Treat numbers as strings of digits
 
@@ -3420,9 +4125,7 @@ define cantor_trans(basefrom, baseto, mul, cons, x) {
 define cantor(basefrom, baseto, x) {
   if(basefrom==baseto)return x;
   return cantor_trans(basefrom, baseto, 1, 0, x)
-}
-
-#!/usr/local/bin/bc -l
+}#!/usr/local/bin/bc -l
 
 ### Digits-Describe.BC - Numbers that describe numbers
 
@@ -3476,8 +4179,6 @@ define parserle_(opt,base,x) {
 # Inverse of the 'describe' functions; Parse the Run Length Encoding
 define parserle_countfirst(base,x) { return parserle_(0,base,x) }
 define parserle_countlast(base,x) {  return parserle_(1,base,x) }
-
-
 #!/usr/local/bin/bc -l
 
 ### Digits-Happy.BC - Tracking the chain of numbers which leads to happiness
@@ -3686,8 +4387,6 @@ define is_happy_sg(base,pow,x) {
     tape[tapetop]=x=t
   }
 }
-
-
 #!/usr/local/bin/bc -l digits.bc
 
 ### Digits-Misc.BC - Treat numbers as strings of digits II
@@ -4077,8 +4776,6 @@ define pdmi(x,m) {
   }
   return pdmi;
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc
 
 ### Factorial.BC - Approximations to, and methods for calculating factorials
@@ -4596,9 +5293,7 @@ define int_multifactorial(y,x) {
 # c[1]=nc[10]+(nc[11]-nc[10])*(y-iy)
 # c[0]= c[ 0]+( c[ 1]- c[ 0])*(x-ix)
 # return c[0]*e((x-1)*l(y)/y+lnfactorial(x/y)-lnfactorial(1/y))
-#}
-
-#!/usr/local/bin/bc -l funcs.bc factorial.bc
+#}#!/usr/local/bin/bc -l funcs.bc factorial.bc
 
 ### Factorial_Gamma.BC - Gamma related functions
  
@@ -4616,9 +5311,7 @@ define inverse_lngamma(x) { return inverse_lnfactorial(x)+1  }
 define   beta(x,y) { return   factorial(x-1)*  factorial(y-1)/  factorial(x+y-1) }
 define lnbeta(x,y) { return lnfactorial(x-1)+lnfactorial(y-1)-lnfactorial(x+y-1) }
 
-# For the lowercase Euler gamma constant, see eulergamma() in factorial.bc
-
-#!/usr/local/bin/bc -l funcs.bc
+# For the lowercase Euler gamma constant, see eulergamma() in factorial.bc#!/usr/local/bin/bc -l funcs.bc
 
 ### Fibonacci.BC - Fibonacci and Lucas functions
 
@@ -4747,9 +5440,7 @@ define inverse_lucas(l) {
   }
   os-=8;scale=os;a/=1
   return intn+a
-}
-
-#!/usr/local/bin/bc -l
+}#!/usr/local/bin/bc -l
 
 ### Funcs.BC - a large number of functions for use with GNU BC
 
@@ -5468,8 +6159,6 @@ define inv_arigeomean(n, y){
   x+=5*eps
   scale-=6;return x*y/s
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### IntDiff.BC - numeric differentiation and integration of 
@@ -5581,9 +6270,7 @@ define ifxdx_g(a,b) {
 }
 
 #define f(x){if(x<=0)return 0;x=root(x,x);return x*(x-1)}
-#zz=-0.10717762842559665710112408473270837028206726160094438
-
-#!/usr/local/bin/bc -l funcs.bc
+#zz=-0.10717762842559665710112408473270837028206726160094438#!/usr/local/bin/bc -l funcs.bc
 
 ### Interest.BC - Compound interest, loan amortisation and compound savings
 
@@ -5919,9 +6606,7 @@ define saving_spt_from_fc(fc,ic,paym,rate,nt) {
   auto rn;
   rn = pow(rate,nt);
   return l(rate)/l(1+paym*(rn-1)/(fc-ic*rn));
-}
-
-#!/usr/local/bin/bc -l logic.bc
+}#!/usr/local/bin/bc -l logic.bc
 
 ### Logic-ANDM.BC
 ### Attempts to create bitwise AND multiplications that do not result in zero
@@ -5976,9 +6661,7 @@ define andmf(x,y){
   z=andm(x,y)
   if(is_any_sfpr3_(x,y,z)){print "andmf";x+=sfpr_warn_msg_()}
  scale=os;return( z/t )
-}
-
-#!/usr/local/bin/bc -l
+}#!/usr/local/bin/bc -l
 
 ### Logic.BC -  Do bitwise functions with GNU bc
 
@@ -6390,8 +7073,6 @@ define inverse_graycodef(x) {
   if(is_any_sfpr3_(x,0,z)){print "inverse_graycodef";x+=sfpr_warn_msg_()}
  scale=os;return( z/t )
 }
-
-
 #!/usr/local/bin/bc -l logic.bc
 
 ### Logic_Inverse.BC - Inverses for bitwise AND and OR
@@ -6534,9 +7215,7 @@ define print_01dx_(x){
 define dand_print(z,y) { .=print_01dx_(dand_sor_(0, z,y, -3)) }
 define sor_print(z,y)  { .=print_01dx_(dand_sor_(1, z,y, -3)) }
 define striped_dand_print(z,y) { .=print_01dx_(dand_sor_(2, z,y, -3)) }
-define striped_sor_print(z,y)  { .=print_01dx_(dand_sor_(3, z,y, -3)) }
-
-#!/usr/local/bin/bc -l
+define striped_sor_print(z,y)  { .=print_01dx_(dand_sor_(3, z,y, -3)) }#!/usr/local/bin/bc -l
 
 ### Logic-OtherBase.BC - Attempt to extend bitwise functions into other bases
 
@@ -6765,8 +7444,6 @@ define base_hamming(base,x,y) {
   t=0;while(x||y){hx=x/base;hy=y/base;if(x-y!=base*(hx-hy)).=t++;x=hx;y=hy}
   scale=os;return t
 }
-
-
 #!/usr/local/bin/bc -l logic.bc
 
 ### Logic-Striping.BC -  Do striped bitwise functions with GNU bc
@@ -6965,8 +7642,6 @@ define genstripemf(o,r,x,y) {
   if(is_any_sfpr3_(x,y,z)){print "genstripemf";x+=sfpr_warn_msg_()}
  scale=os;return( z/t )
 }
-
-
 #!/usr/local/bin/bc -l logic.bc logic_striping.bc
 
 ### Logic_Striping_Meta.BC - Analysis of genstripe patterns
@@ -7492,8 +8167,6 @@ define decat2_stripe_patterns(z,y) {
 define undecat2_stripe_patterns(z,y) {
   return decat2_stripe_patterns(z,-y)
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### MelancholyB.BC - A collatz-like iteration leading to zero, or loops.
@@ -7724,8 +8397,6 @@ define is_melancholyb_sg(x) {
     tape[tapetop]=x
   }
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### Melancholy.BC - A collatz-like iteration leading to zero, or loops.
@@ -8042,8 +8713,6 @@ define is_melancholy_sg(x) {
     tape[tapetop]=x
   }
 }
-
-
 #!/usr/local/bin/bc -l
 
 ## Find the nearest sum of powers of 2, 3, and 5 to make a number
@@ -8076,8 +8745,6 @@ define print235(x) {
  }
  return( found );
 }
-
-
 #!/usr/local/bin/bc -l
 
 ## Calculate the hyper-exponential Ackermann function
@@ -8105,8 +8772,6 @@ define ackz(x,y) {
   if (y<=0)return(ack(x-1,1))
   return(ack(x-1,ack(x,y-1)))
 }
-
-
 
 #!/usr/local/bin/bc -l funcs.bc
 
@@ -8145,8 +8810,6 @@ define anglelog(b,x) {
   k = int_log(b,x)
   return( (b-1)*k + x/b^k - 1)
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc
 
 ## Find the nearest perfect power to a number
@@ -8187,8 +8850,6 @@ define nearest_perfect_power(x){
   auto dummy[];
   return nearest_perfect_power_a(dummy[],x)
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### SRR.BC - Sum of Repeated Roots (less one);
@@ -8223,8 +8884,6 @@ define srr_n(n,x) { # Generalisation of srr; srr(x) == srr_n(2,x)
   scale-=6;t/=1
   return(t);
 }
-
-
 #!/usr/local/bin/bc -l funcs.bc factorial.bc primes.bc
 
 ### OrialC.BC - Variants of primorial and lcmultorial
@@ -8412,8 +9071,6 @@ define lcmsubmodorialg(n,x) {
   p=1;for(i=2;i<x&&p;i++)p=int_lcm(p,n+(x%i))
   scale=os;return p
 }
-
-
 #!/usr/local/bin/bc -l
 
 ### Output-Formatting.BC - Formatted output
@@ -8915,8 +9572,6 @@ define printfe(width, precision, n) {
 define printspc(n)  { if(n>0)for(i=0;i< n;i++)print " "  }
 define printtabs(n) { if(n>0)for(i=0;i< n;i++)print "\t" }
 define newline() { print "\n" }
-
-
 #!/usr/local/bin/bc -l
 
 ### Output-Graph.BC - rudimentary functions for creating rudimentary drawings
@@ -9088,9 +9743,7 @@ for(i=0;i<=10;i++)x[i]=i-5
 
 graphx(x[],0,10)
 quit
-*/
-
-#!/usr/local/bin/bc -l output_formatting.bc
+*/#!/usr/local/bin/bc -l output_formatting.bc
 
 ### Output-Roman.BC - Print numbers with extended Roman-style numerals
 
@@ -9140,8 +9793,101 @@ define printroman(n) {
   }
   scale=os;return n
 }
+#!/usr/local/bin/bc -l
 
+### Rand.BC - Random number generator for GNU BC
 
+# Random number generator algorithm and code
+# Not guaranteed for any purpose
+# Chi-square tests prove this algorithm to be favourable
+
+# ********************************************************
+# ******************  IMPORTANT NOTICE  ******************
+# ********************************************************
+# An external seed source is required to start this library!
+# See the bash randbc script for an example of how to do this.
+# (It's available from the same website you found this file)
+
+scale=50;ibase=A
+# Global variables. Not to be changed in code without really good reason
+rand_seed_ = 3482.2023+sqrt(8)
+rand_mult_ = sqrt(2)+sqrt(3)
+rand_smax_ = 2^32
+rand_last_ = 0
+
+define srand(x) {
+  auto os,z,f,i;
+  if(x<0){
+    .=srand(x=-x);z=rand_seed_
+    .=srand(sqrt(x)+x)
+    rand_seed_=(z+rand_seed_)/2
+    return 0
+  }
+  os=scale
+  z=x+=sqrt(5);x+=sqrt(x);x-=sqrt(x)
+  x+=1/2;x*=20/13
+  scale=0
+   f=(x-(i=x/1))
+  scale=os
+  z-=f*i;if(z<0)z=-z
+  rand_seed_=z
+  scale=os;return 0
+}
+
+define rand(x) {
+  auto i, f, os;
+
+  if(x<0)return srand(x)
+  if(x<1)return(rand_last_)
+
+  os = scale + 10
+  scale = 0  ; i = rand_seed_ / 1
+  scale = os ; f = rand_seed_ - i
+
+  rand_seed_ = rand_mult_ * (1+i) * (1+f)
+
+  while(rand_seed_>rand_smax_)rand_seed_-=rand_smax_
+
+  scale = 0  ; i = rand_seed_ / 1
+  scale = os ; f = rand_seed_ - i
+
+  rand_last_ = f
+  if(x==1){scale=os-10;return(rand_last_/=1)}
+
+  rand_last_ = f * x + 1
+  scale = 0        ; rand_last_ /= 1
+  scale = scale(x) ; rand_last_ /= 1
+  scale = os - 10
+  
+  return(rand_last_)
+}
+#!/usr/local/bin/bc -l
+
+### Thermometer.BC - Conversions of temperature scales to other scales
+
+# Caution: These functions will not operate correctly if ibase is not
+# set to base ten (A) nor if scale is set too low
+
+define   celcius_to_farenheit( c ) { return (c * 1.8 + 32)           }
+define   celcius_to_kelvin(    c ) { return (c + 273.15)             }
+define   celcius_to_reamur(    c ) { return (c * 0.8)                }
+define   celcius_to_rankine(   c ) { return (c * 1.8 + 491.67)       }
+define farenheit_to_celcius(   f ) { return ((f - 32)/1.8)           }
+define farenheit_to_kelvin(    f ) { return ((f + 459.67)/1.8)       }
+define farenheit_to_reamur(    f ) { return ((f - 32)/2.25)          }
+define farenheit_to_rankine(   f ) { return (f + 459.67)             }
+define    kelvin_to_celcius(   k ) { return (k - 273.15)             }
+define    kelvin_to_farenheit( k ) { return (k * 1.8 - 459.67)       }
+define    kelvin_to_reamur(    k ) { return ((k - 273.15)*0.8)       }
+define    kelvin_to_rankine(   k ) { return (k * 1.8)                }
+define    reamur_to_celcius(   r ) { return (r / 0.8)                }
+define    reamur_to_farenheit( r ) { return (r * 2.25 + 32)          }
+define    reamur_to_kelvin(    r ) { return (r / 0.8 + 273.15)       }
+define    reamur_to_rankine(   r ) { return (r * 2.25 + 491.67)      }
+define   rankine_to_celcius(   r ) { return (r / 1.8 + 273.15)       }
+define   rankine_to_farenheit( r ) { return (r - 459.67)             }
+define   rankine_to_kelvin(    r ) { return (r / 1.8)                }
+define   rankine_to_reamur(    r ) { return ((r / 1.8 + 273.15)*0.8) }
 #!/usr/local/bin/bc -l
 
 ### Primes.BC - Primes and factorisation (rudimentary)
@@ -9873,8 +10619,6 @@ define subprimorial(n) {
   for(p=p;p<=n;p=nextprime(p))pm*=p-1
   return pm
 }
-
-
 #!/usr/local/bin/bc -l primes.bc primes_db_minipack.bc
 
 ### Primes_DB_Code.BC - prime counting / retrieval functions reliant on a DB
@@ -10026,9 +10770,7 @@ define fillprimearray() {
     }
   }
   ibase=oib;scale=os;return 0
-}
-
-#!/usr/local/bin/bc -l primes.bc primes_db_code.bc
+}#!/usr/local/bin/bc -l primes.bc primes_db_code.bc
 
 ### Primes_DB_Minipack.BC - The primes from 13 to 822347 packed into a global bit array
 
@@ -10407,8 +11149,6 @@ pd_[162]=400C814D004E4B68C94469CA4809F9AD5CCC01E46F40155204A839317201202780000D3
 pd_[163]=6366253C51E9102493B0830495CB704D40049C0822029B7604300626840305722E4D94545036C404061D2A1C2DA91230092266856D80B3D296065215010035
 pd_max_=163
 ibase=A
-
-
 #!/usr/local/bin/bc -l primes.bc
 
 ### Primes-Other.BC - Extra functions to go along with Primes.BC
@@ -10526,8 +11266,6 @@ define factor_invert(x) {
   c=1;for(i=0;fp[i];i+=2)c*=fp[i+1]^fp[i]
   return c;
 }
-
-
 #!/usr/local/bin/bc -l primes.bc
 
 ### Primes-Twin.BC - A few functions for handling twin primes
@@ -10578,103 +11316,3 @@ define prevtwinprime(x) {
     while(!(t=is_twin_prime(x)))x-=6
   scale=os;return x
 }
-
-
-#!/usr/local/bin/bc -l
-
-### Rand.BC - Random number generator for GNU BC
-
-# Random number generator algorithm and code
-# Not guaranteed for any purpose
-# Chi-square tests prove this algorithm to be favourable
-
-# ********************************************************
-# ******************  IMPORTANT NOTICE  ******************
-# ********************************************************
-# An external seed source is required to start this library!
-# See the bash randbc script for an example of how to do this.
-# (It's available from the same website you found this file)
-
-scale=50;ibase=A
-# Global variables. Not to be changed in code without really good reason
-rand_seed_ = 3482.2023+sqrt(8)
-rand_mult_ = sqrt(2)+sqrt(3)
-rand_smax_ = 2^32
-rand_last_ = 0
-
-define srand(x) {
-  auto os,z,f,i;
-  if(x<0){
-    .=srand(x=-x);z=rand_seed_
-    .=srand(sqrt(x)+x)
-    rand_seed_=(z+rand_seed_)/2
-    return 0
-  }
-  os=scale
-  z=x+=sqrt(5);x+=sqrt(x);x-=sqrt(x)
-  x+=1/2;x*=20/13
-  scale=0
-   f=(x-(i=x/1))
-  scale=os
-  z-=f*i;if(z<0)z=-z
-  rand_seed_=z
-  scale=os;return 0
-}
-
-define rand(x) {
-  auto i, f, os;
-
-  if(x<0)return srand(x)
-  if(x<1)return(rand_last_)
-
-  os = scale + 10
-  scale = 0  ; i = rand_seed_ / 1
-  scale = os ; f = rand_seed_ - i
-
-  rand_seed_ = rand_mult_ * (1+i) * (1+f)
-
-  while(rand_seed_>rand_smax_)rand_seed_-=rand_smax_
-
-  scale = 0  ; i = rand_seed_ / 1
-  scale = os ; f = rand_seed_ - i
-
-  rand_last_ = f
-  if(x==1){scale=os-10;return(rand_last_/=1)}
-
-  rand_last_ = f * x + 1
-  scale = 0        ; rand_last_ /= 1
-  scale = scale(x) ; rand_last_ /= 1
-  scale = os - 10
-  
-  return(rand_last_)
-}
-
-
-#!/usr/local/bin/bc -l
-
-### Thermometer.BC - Conversions of temperature scales to other scales
-
-# Caution: These functions will not operate correctly if ibase is not
-# set to base ten (A) nor if scale is set too low
-
-define   celcius_to_farenheit( c ) { return (c * 1.8 + 32)           }
-define   celcius_to_kelvin(    c ) { return (c + 273.15)             }
-define   celcius_to_reamur(    c ) { return (c * 0.8)                }
-define   celcius_to_rankine(   c ) { return (c * 1.8 + 491.67)       }
-define farenheit_to_celcius(   f ) { return ((f - 32)/1.8)           }
-define farenheit_to_kelvin(    f ) { return ((f + 459.67)/1.8)       }
-define farenheit_to_reamur(    f ) { return ((f - 32)/2.25)          }
-define farenheit_to_rankine(   f ) { return (f + 459.67)             }
-define    kelvin_to_celcius(   k ) { return (k - 273.15)             }
-define    kelvin_to_farenheit( k ) { return (k * 1.8 - 459.67)       }
-define    kelvin_to_reamur(    k ) { return ((k - 273.15)*0.8)       }
-define    kelvin_to_rankine(   k ) { return (k * 1.8)                }
-define    reamur_to_celcius(   r ) { return (r / 0.8)                }
-define    reamur_to_farenheit( r ) { return (r * 2.25 + 32)          }
-define    reamur_to_kelvin(    r ) { return (r / 0.8 + 273.15)       }
-define    reamur_to_rankine(   r ) { return (r * 2.25 + 491.67)      }
-define   rankine_to_celcius(   r ) { return (r / 1.8 + 273.15)       }
-define   rankine_to_farenheit( r ) { return (r - 459.67)             }
-define   rankine_to_kelvin(    r ) { return (r / 1.8)                }
-define   rankine_to_reamur(    r ) { return ((r / 1.8 + 273.15)*0.8) }
-

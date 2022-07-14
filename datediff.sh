@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.15  jun/2022  mountaineerbr  GPLv3+
+# v0.19.16  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -34,10 +34,11 @@ DESCRIPTION
 	utes or seconds alone). It also displays a compound time range
 	with all the above units into consideration to each other.
 
-	Single UNIT time periods can be displayed in table format (-V)
-	and their scale set with -NUM where NUM is an integer. When last
-	positional parameter UNIT is exactly one of \`Y', \`MO', \`W', \`D',
-	\`H', \`M' or \`S', only a single UNIT range is printed.
+	Single UNIT time periods can be displayed in table format -V and
+	their scale set with -NUM where NUM is an integer. Result least
+	significant digit is subject to rounding. When last positional
+	parameter UNIT is exactly one of \`Y', \`MO', \`W', \`D', \`H',
+	\`M' or \`S', only a single UNIT range is printed.
 
 	Output DATE section prints two dates in ISO-8601 format or, if
 	option -R is set, RFC-5322 format (when \`date' is available).
@@ -198,7 +199,7 @@ OPTIONS
 ##Time zone / Offset support
 #dbplunkett: <https://stackoverflow.com/questions/38641982/converting-date-between-timezones-swift>
 #time zone talk is a complicated business, leave it for `date' programme!
-#-00:00 and +24:00 are valid and should equal to +00:00;
+#-00:00 and +24:00 are valid and should equal to +00:00; however -0 is denormal;
 #support up to `seconds' for time zone adjustment; POSIX time does not
 #account for leap seconds; POSIX time zone definition by the $TZ variable
 #takes a different form from ISO8601 standards; environment $TZ applies to both dates;
@@ -208,7 +209,7 @@ OPTIONS
 #<https://stackoverflow.com/questions/3010035/converting-a-utc-time-to-a-local-time-zone-in-java>
 #<https://www.iana.org/time-zones>, <https://www.w3.org/TR/NOTE-datetime>
 #<https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html>
-#A year zero does not exist in the Anno Domini (AD) calendar year system
+##A year zero does not exist in the Anno Domini (AD) calendar year system
 #commonly used to number years in the Gregorian calendar (nor in its
 #predecessor, the Julian calendar); in this system, the year 1 BC is
 #followed directly by year AD 1. However, there is a year zero in both
@@ -217,6 +218,16 @@ OPTIONS
 #for all calendar numbering systems (where year zero coincides with the
 #Gregorian year 1 BC). In Proleptic Gregorian calendar, year 0000 is leap.
 #<https://docs.julialang.org/en/v1/stdlib/Dates/>
+##bc round functions:
+#Serge3leo - https://stackoverflow.com/questions/26861118/rounding-numbers-with-bc-in-bash
+#MetroEast - https://askubuntu.com/questions/179898/how-to-round-decimals-using-bc-in-bash
+#``Rounding is more accurate than chopping/truncation''.
+#https://wiki.math.ntnu.no/_media/ma2501/2016v/lecture1-intro.pdf
+##Negative zeros have some subtle properties that will not be evident in
+#most programs. A zero exponent with a nonzero mantissa is a "denormal."
+#A denormal is a number whose magnitude is too small to be represented
+#with an integer bit of 1 and can have as few as one significant bit.
+#https://www.lahey.com/float.htm
 
 
 #globs
@@ -239,8 +250,8 @@ INPUT_FMT="${TIME_ISO8601_FMT:0:17}"  #%Y-%m-%dT%H:%M:%S - no timezone
 # Choose between GNU or BSD date
 # datefun.sh [-u|-R|-v[val]|-I[fmt]] [YYY-MM-DD|@UNIX] [+OUTPUT_FORMAT]
 # datefun.sh [-u|-R|-v[val]|-I[fmt]]
-# By defaults, input should be UNIX time (append @) or ISO8601 format.
-# Option -I `fmt' may be `date', `hours', `minutes' or `seconds' (added in FreeBSD12.0).
+# By defaults, input should be ISO8601 date or UNIX time (append @).
+# Option -I `fmt' may be `date', `hours', `minutes' or `seconds' (added in FreeBSD12).
 # Setting environment TZ=UTC is equivalent to -u. 
 datefun()
 {
@@ -392,7 +403,7 @@ mainf()
 	#environment $TZ
 	[[ ${TZ##*$GLOBUTC} = -?* ]] && TZ_neg=-1 || TZ_neg=+1
 	((TZh==0 && TZm==0 && TZs==0)) && TZ_neg=+1
-	[[ $TZh$TZm$TZs = *([0-9+-]) ]] || unset TZh TZm TZs  #TZ  #$TZ will be unset later
+	[[ $TZh$TZm$TZs = *([0-9+-]) && ! $unix2 ]] || unset TZh TZm TZs  #we don't care about $TZ if `date' was available
 
 	#24h clock and input leap second support (these $*tz parameters will be zeroed later)
 	((hourA==24)) && (( (neg_tzA>0 ? (tzAh-=hourA-23) : (tzAh+=hourA-23) ) , (hourA-=hourA-23) ))
@@ -415,7 +426,7 @@ mainf()
 	fi
 
 	#offset and $TZ support
-	if [[ ! $unix2 ]] && ((tzAh||tzAm||tzAs||tzBh||tzBm||tzBs||TZh||TZm||TZs))
+	if ((tzAh||tzAm||tzAs||tzBh||tzBm||tzBs||TZh||TZm||TZs))
 	then 	#check validity
 		if ((tzAh>24||tzBh>24||tzAm>60||tzBm>60||tzAs>60||tzBs>60))
 		then 	echo "warning: illegal offsets" >&2
@@ -423,7 +434,7 @@ mainf()
 		fi
 		if ((TZh>23||TZm>59||TZs>59))
 		then 	echo "warning: illegal environment \$TZ" >&2
-			unset TZh TZm TZs  TZ
+			unset TZh TZm TZs
 		fi 	#offset specs:
 		#<https://www.w3.org/TR/NOTE-datetime>
 		#<https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html>
@@ -432,11 +443,11 @@ mainf()
 		if ((!OPTVERBOSE)) && ((TZh||TZm||TZs))
 		then 	((hourAprtz-=(TZh*TZ_neg) , minAprtz-=(TZm*TZ_neg) , secAprtz-=(TZs*TZ_neg) ))
 			((hourBprtz-=(TZh*TZ_neg) , minBprtz-=(TZm*TZ_neg) , secBprtz-=(TZs*TZ_neg) ))
-		else 	unset TZh TZm TZs  TZ
+		else 	unset TZh TZm TZs
 		fi
 
 		#convert dates to UTC for internal range calculations
-		((tzAh||tzAm||tzAs)) && var="A" || var=
+		((tzAh||tzAm||tzAs)) && var="A" || var=""
 		((tzBh||tzBm||tzBs)) && var="$var B"
 		((TZh||TZm||TZs)) && var="$var A.pr B.pr"
 		for v in $var  #A B  A.pr B.pr
@@ -530,8 +541,8 @@ mainf()
 
 	elif [[ ! $unix2$OPTVERBOSE && $tzA$tzB$TZ = *+([A-Za-z_])* ]]
 	then 	#echo "warning: input DATE or \$TZ contains timezone ID or name. Support requires package \`date'" >&2
-		unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs  TZ
-	else 	unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs  TZ
+		unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs
+	else 	unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs
 	fi  #``Offset is *from* UTC''. Environment $TZ applies to both DATES.
 
 
@@ -728,13 +739,26 @@ mainf()
 
 	#single unit time durations (when `bc' is available)
 	if ((OPTT || OPTVERBOSE<3)) &&
-		bc=( $(bc <<<"scale = ${SCL};
-		(${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) ) ); /**  YEARS  **/
-		(${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) ) ); /**  MONTHS **/
-		(${range:-0} / 604800); /**  WEEKS  **/
-		(${range:-0} / 86400);  /**  DAYS   **/
-		(${range:-0} / 3600);   /**  HOURS  **/
-		(${range:-0} / 60);     /** MINUTES **/") )
+		bc=( $(bc <<<" /* round argument 'x' to 'd' digits */
+		define r(x, d) {
+			auto r, s
+			if(0 > x) {
+				return -r(-x, d)
+			}
+			r = x + 0.5*10^-d
+			s = scale
+			scale = d
+			r = r*10/10
+			scale = s  
+			return r
+		};
+		scale = 16;
+		r( (${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) ) ) , $SCL); /**  YEARS  **/
+		r( (${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) ) ) , $SCL); /**  MONTHS **/
+		r( (${range:-0} / 604800) , $SCL); /**  WEEKS  **/
+		r( (${range:-0} / 86400) , $SCL);  /**  DAYS   **/
+		r( (${range:-0} / 3600) , $SCL);   /**  HOURS  **/
+		r( (${range:-0} / 60) , $SCL);     /** MINUTES **/") )
 		#ARRAY:  0=YEARS  1=MONTHS  2=WEEKS  3=DAYS  4=HOURS  5=MINUTES
 	then 	#choose layout of single units
 		if ((OPTT || !OPTLAYOUT))
@@ -811,8 +835,8 @@ mainf()
 #execute result checks against `datediff' and `date'
 debugf()
 {
-		local iA iB tA tB dd ddout y_dd mo_dd w_dd d_dd h_dd m_dd s_dd range_check unix1t unix2t checkA_pr checkB_pr  checkA_utc checkB_utc date_cmd_save
-		date_cmd_save=$DATE_CMD  DATE_CMD=date  TZ=UTC${TZ##*$GLOBUTC}
+		local iA iB tA tB dd ddout y_dd mo_dd w_dd d_dd h_dd m_dd s_dd range_check unix1t unix2t checkA_pr checkB_pr  checkA_utc checkB_utc date_cmd_save TZ_save
+		date_cmd_save=$DATE_CMD DATE_CMD=date  TZ_save=$TZ TZ=UTC${TZ##*$GLOBUTC}
 
 		[[ $2 = *[Tt:]*[+-]$GLOBTZ && $1 = *[Tt:]*[+-]$GLOBTZ ]] || echo warning: input dates are missing offset/tz bits! >&2
 		iB="${2:-${inputB}}" iA="${1:-${inputA}}"
@@ -862,11 +886,11 @@ debugf()
 
 		#compound range check against `datediff'
 		#`datediff' offset range is between -14h and +14h!
-		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "$iA" "$iB") || ((ret+=250))
+		ddout=$(datediff -f'%Y %m %w %d  %H %M %S' "$tA" "$tB") || ((ret+=250))
 		read y_dd mo_dd w_dd d_dd  h_dd m_dd s_dd <<<"$ddout"
 		dd=(${y_dd#-} $mo_dd $w_dd $d_dd  $h_dd $m_dd $s_dd)
 
-		DATE_CMD=$date_cmd_save
+		DATE_CMD=$date_cmd_save TZ=$TZ_save
 		{
 			[[ ${date2_iso8601_pr:0:25} = $checkB_pr ]] &&
 			[[ ${date1_iso8601_pr:0:25} = $checkA_pr ]] &&
@@ -935,7 +959,7 @@ prHelpf()
 
 
 ## Parse options
-while getopts 0123456790Ddf:hlRr@uVv opt
+while getopts 01234567890Ddf:hlRr@uVv opt
 do 	case $opt in
 		[0-9]) 	SCL="$SCL$opt"
 			;;
