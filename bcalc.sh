@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.1  jun/2022  by mountaineerbr
+# v0.15.3  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -309,8 +309,8 @@ define commaprint_(x,g){
 #calculators
 calcf()
 {
-	local eq bceq scl optz
-	eq="$1"
+	local eq bceq scl
+	eq="${1%;}"
 	scl=${OPTS:-$BCSCALE}
 	((OPTT)) && scl=${OPTS:-2}
 	[[ ${eq// } ]] || return
@@ -330,14 +330,18 @@ calcf()
 		if ((OPTE)) && [[ ! $OPTS ]]
 		then 	bceq="$eq"
 		elif ((OPTE)) && [[ $OPTS ]]
-		then 	bceq="scale = $scl; ($eq) / 1"
-		else 	[[ $OPTS ]] || optz=1
-			bceq="${BCFUN};
-			scale = $scl + 1;
-			x = round_( ($eq) , $scl );
+		then 	bceq="scale = $scl; $eq / 1"
+		else
+			res=$(bc ${OPTL:+-l} "$@" <<<"scale = $scl + 1; $eq / 1;") || return
+			unset BC_ENV_ARGS
+			bc <<-!
+			${BCFUN};
 			scale = $scl;
-			if(${optz}0) x = trunc_( x );
-			if(${OPTT}0) dummy = commaprint_( x , ${OPTT_ARG:-3} ) else x;"
+			x = round_( ($res) , $scl );
+			if(${OPTS}0<1) x = trunc_( x );
+			if(${OPTT}0>0) dummy = commaprint_( x , ${OPTT_ARG:-3} ) else x;
+			!
+			return
 		fi
 		bc ${OPTL:+-l} "$@" <<<"$bceq"
 	fi
