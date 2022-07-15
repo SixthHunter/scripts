@@ -328,9 +328,9 @@ calcf()
 	else 	#bc
 		set --
 		if ((OPTE)) && [[ ! $OPTS ]]
-		then 	bceq="$eq"
+		then 	bceq="$eq;"
 		elif ((OPTE)) && [[ $OPTS ]]
-		then 	bceq="scale = $scl; $eq / 1"
+		then 	bceq="scale = $scl; $eq / 1;"
 		else
 			res=$(bc ${OPTL:+-l} "$@" <<<"scale = $scl + 1; $eq / 1;") || return
 			unset BC_ENV_ARGS
