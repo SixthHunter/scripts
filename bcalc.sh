@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15  jun/2022  by mountaineerbr
+# v0.15.1  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -28,7 +28,7 @@ HELP_LINES="NAME
 
 
 SYNOPSIS
-	$SN  [-,.eftvvz] [-NUM] EXPRESSION
+	$SN  [-,.efltvvz] [-NUM] EXPRESSION
 	$SN  -n [INDEX] TEXT
 	$SN  -r [NUM] [MAXWIDTH]
 	$SN  [-eehrrRV]
@@ -70,12 +70,12 @@ DESCRIPTION
 	argument after this option is an INDEX number, adds note to that
 	entry, otherwise adds to the last record entry.
 
-	Option -e loads bc mathlib and extension file or Zshell mathfunc
-	module. Set bc extensions file path in script head source code
-	or as an environmental variable path.
+	Option -l loads bc mathlib and option -e extension file or Zshell
+	mathfunc module. Set bc extensions file path in script head source
+	code or as an environmental variable path.
 
-	Trailing zeroes will be trimmed unless extension option -e is set,
-	in which case result is printed in raw format.
+	Rounding and trailing zeroes trimming are performed unless any 
+	option -el is set.
 
 
 DECIMAL SEPARATOR AND THOUSANDS GROUPING
@@ -230,8 +230,9 @@ OPTIONS
 	-V 	  Print script version.
 	
 	EXTENSIONS
-	-e 	  Load bc extensions or Zsh mathfunc when available.
-	-ee 	  Print bc extension file when available.
+	-e 	  Load bc extensions or Zsh mathfunc module.
+	-ee 	  Print bc extension file (if available).
+	-l 	  Set bc mathlib or Zsh mathfunc module.
 
 	RECORD FILE
 	-f 	  Disable use of record file.
@@ -246,7 +247,8 @@ OPTIONS
 	-, 	  Set decimal separator of input/output as (,) comma.
 	-. 	  Set decimal separator of input/output as (.) dot.
 	-NUM 	  Scale, decimal plates (def=$BCSCALE).
-	-t 	  Thousands grouping in result."
+	-t 	  Thousands grouping.
+	-T NUM 	  Comma dividers using given spacing."
 
 
 #some formatting functions to use with this script
@@ -254,7 +256,7 @@ BCFUN="/* Round argument 'x' to 'd' digits */
 define round_(x, d) {
 	auto r, s
 	if(0 > x) {
-		return -r(-x, d)
+		return -round_(-x, d)
 	}
 	r = x + 0.5*10^-d
 	s = scale
@@ -266,13 +268,41 @@ define round_(x, d) {
 /* Serge3leo - https://stackoverflow.com/questions/26861118/rounding-numbers-with-bc-in-bash
  * MetroEast - https://askubuntu.com/questions/179898/how-to-round-decimals-using-bc-in-bash
  */
-/* Truncate trailing zeroes */
+/* Truncate trailing zeroes and nines */
 define trunc_(x) {
-	auto os;
-	scale=200;  /* must be at least the same length as digits after dot */
-	os=scale;
-	for(scale=0;scale<=os;scale++)
-	if(x==x/1){x/=1;scale=os;return x};
+	auto os,ts,s,d,tx;
+	os=scale
+	d=length(x)-scale(x)
+	if(d<5||d>scale)d=5
+	ts=scale-d
+	if(scale>=d+d){
+		scale=ts
+		s=1;if(x<0)s=-1
+		x+=s*A^-scale
+		.=scale--;x/=1
+	}
+	for(scale=0;scale<=ts;scale++)if(x==(tx=x/1)){x=tx;break}
+	scale=os;return(x)
+};
+/* workhorse function for the below */
+define comma_(x,gp) {
+	t=x%gp
+	if(x>=gp){
+		t+=comma_(x/gp,gp);print \",\"
+		for(gp/=obase;gp>=obase;gp/=obase)if(t<gp)print 0
+	}
+	print t;return 0
+};
+/* Print a number with comma dividers using given spacing */
+/*  e.g. commaprint(1222333, 3) prints 1,222,333 */
+define commaprint_(x,g){
+	auto os,sign;
+	if(g<1)g=1
+	sign=1;if(x<0){sign=-1;x=-x}
+	os=scale;scale=0
+	if(sign<0)print \"-\"
+	x+=comma_(x,obase^(g/1))
+	scale=os;return sign*x
 }"
 
 #functions
@@ -280,28 +310,34 @@ define trunc_(x) {
 calcf()
 {
 	local eq bceq scl optz
-	scl="${OPTS:-$BCSCALE}"
 	eq="$1"
-
+	scl=${OPTS:-$BCSCALE}
+	((OPTT)) && scl=${OPTS:-2}
 	[[ ${eq// } ]] || return
 
-	#zsh
 	if [[ $ZSH_VERSION ]]
-	then 	#mathfunc module
+	then 	#zsh
 		((OPTE+OPTL)) && zmodload zsh/mathfunc
-		#set float numbers and scale
 		setopt LOCAL_OPTIONS FORCE_FLOAT
 		typeset -F "${OPTS:-$BCSCALE}" eq
-		print "$eq"
-	#bc
-	else
+
+		if ((OPTT))  #add thousand separator -t
+		then 	printf "%'.*f\n" "$scl" "$eq"
+		else 	print "$eq"
+		fi
+	else 	#bc
 		set --
 		if ((OPTE)) && [[ ! $OPTS ]]
 		then 	bceq="$eq"
 		elif ((OPTE)) && [[ $OPTS ]]
 		then 	bceq="scale = $scl; ($eq) / 1"
 		else 	[[ $OPTS ]] || optz=1
-			bceq="${BCFUN}; scale = ($scl + 1); ${optz:+trunc_}( round_( ($eq) , $scl ) )"
+			bceq="${BCFUN};
+			scale = $scl + 1;
+			x = round_( ($eq) , $scl );
+			scale = $scl;
+			if(${optz}0) x = trunc_( x );
+			if(${OPTT}0) dummy = commaprint_( x , ${OPTT_ARG:-3} ) else x;"
 		fi
 		bc ${OPTL:+-l} "$@" <<<"$bceq"
 	fi
@@ -354,7 +390,7 @@ precff()
 
 
 #parse options
-while getopts ,.0123456789efhlnorRtvVz- opt
+while getopts ,.0123456789efhlnorRtT:vVz- opt
 do 	case $opt in
 		#change input/output decimal separator
 		,) 	OPTDEC=${OPTDEC:0:1}, ;;
@@ -382,6 +418,7 @@ do 	case $opt in
 		R) 	OPTP=-100 ;;
 		#thousand separator
 		t|o) 	((++OPTT)) ;;
+		T|O) 	((++OPTT)) ;((OPTT_ARG=OPTARG)) || ((OPTT_ARG=3)) ;;
 		#verbose
 		v) 	((++OPTV)) ;;
 		#print script version
@@ -478,14 +515,9 @@ then 	echo "$recordout" >>"$BCRECFILE"
 fi
 unset recordout lastres lasteq lastdate lastnote timestamp
 
-#add thousand separator -t
-if ((OPTT))
-then 	printf -v RES "%'.*f" "${OPTS:-2}" "$RES" 2>/dev/null ||
-		RES=$(printf "%'.*f\n" "${OPTS:-2}" "$RES")
 #trim trailing zeroes, skip if -es
-elif [[ ! $OPTE$OPTS$BASH_VERSION ]]
-then
-	if [[ $RES = *[.]*[!0]${RES##*[!0]} ]]
+if [[ $ZSH_VERSION ]] && [[ ! $OPTE$OPTS ]]
+then 	if [[ $RES = *[.]*[!0]${RES##*[!0]} ]]
 	then 	RES="${RES%${RES##*[!0]}}"
 	elif [[ $RES = *[.]${RES##*[!0]} ]]
 	then 	RES="${RES%.0*}"
