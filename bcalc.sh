@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.10  jun/2022  by mountaineerbr
+# v0.16  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -509,12 +509,12 @@ RES=$(calcf "$EQ") && [[ $RES ]] || exit
 timestamp=$(printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 2>/dev/null \
 	|| { zmodload -aF zsh/datetime b:strftime && strftime '%Y-%m-%dT%H:%M:%S%z' ;} 2>/dev/null \
 	|| date -Iseconds)
-recordout="$RES"$'\t'"$EQ"$'\t'"$timestamp"$'\t'
+recordout="${RES//,}"$'\t'"$EQ"$'\t'"$timestamp"$'\t'
 if [[ -e "$BCRECFILE" ]]
 then
 	IFS=$'\t' read -r lastres lasteq lastdate lastnote < <(tail -1 "$BCRECFILE") 
-	if [[ ( "$RES" != "$lastres" || "${EQ//[$IFS]/}" != "${lasteq//[$IFS]/}" ) && "$SIMPLEVAREQ" -eq 0 ]]
-	then 	echo "$recordout" >>"$BCRECFILE" ;LASTIND=$((LASTIND+1))
+	if [[ ${RES//,} != "$lastres" || ${EQ//[$IFS]} != "${lasteq//[$IFS]}" ]] && [[ $SIMPLEVAREQ -eq 0 ]]
+	then 	echo "$recordout" >>"$BCRECFILE" ;((++LASTIND))
 	fi
 elif [[ $BCRECFILE ]]  #init tsv
 then 	echo "$recordout" >>"$BCRECFILE"
