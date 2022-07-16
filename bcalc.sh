@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.5  jun/2022  by mountaineerbr
+# v0.15.6  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -327,7 +327,7 @@ calcf()
 				$BCFUN;
 				scale = $scl + 1;
 				$eq / 1;
-				if($scl+1==scale) round_( last , scale - 1 ) else round_( last , scale );
+				if($scl+1==scale) round_( last , scale-1 ) else last;
 				if(${OPTS:-0}<1) trunc_( last ) else last;
 				if(${OPTT:-0}>0) dummy = commaprint_( last , ${OPTT_ARG:-3} ) else last;
 			!
