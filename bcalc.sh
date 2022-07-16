@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.9  jun/2022  by mountaineerbr
+# v0.15.10  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -288,7 +288,7 @@ define comma_(x,gp) {
 /* Print a number with comma dividers using given spacing */
 /*  e.g. commaprint(1222333, 3) prints 1,222,333 */
 define commaprint_(x,g){
-	auto os,sign;
+	auto os,sign,xdec,xint;
 	if(g<1)g=1
 	sign=1;if(x<0){sign=-1;x=-x}
 	os=scale;scale=0
@@ -296,7 +296,7 @@ define commaprint_(x,g){
 	/* floating point hack */
 	xdec =  x - (x/1);    /* decimal */
 	xint = (x - xdec)/1;  /* integer */
-	if(xdec!=x) x = xint;
+	if(xdec>0) x = xint;
 
 	if(sign<0)print \"-\"
 	x+=comma_(x,obase^(g/1)); if(xdec>0) print xdec;
