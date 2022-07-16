@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.6  jun/2022  by mountaineerbr
+# v0.15.9  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -90,8 +90,10 @@ DECIMAL SEPARATOR AND THOUSANDS GROUPING
 	a dot (.) but output should be printed with decimal separator as
 	comma (,).
 
-	Option -t prints output with thousands grouping. Beware shell-
-	specific output length and scale limitations when using this option.
+	Option -t prints output with thousands grouping while option -oNUM
+	print a number with comma dividers using given spacing NUM. Beware
+	shell-specific output length and scale limitations when using these
+	options.
 
 
 	Examples
@@ -156,7 +158,7 @@ WARRANTY
 
 BUGS
 	Bash and Zsh have got decimal precision limits when printig re-
-	sults with thousands grouping (option -t).
+	sults with thousands grouping (option -to).
 
 	Double precision numbers are accurate up to sixteen decimal
 	places in Zsh maths and Bash \`printf'.
@@ -201,6 +203,8 @@ USAGE EXAMPLES
 	      Grouping thousands in result
 
 		$ $SN -t 100000000
+
+		$ $SN -o 3 100000000
 
 
 	      Bc read the following syntax in EXPRESSION for setting scale
@@ -247,8 +251,8 @@ OPTIONS
 	-, 	  Set decimal separator of input/output as (,) comma.
 	-. 	  Set decimal separator of input/output as (.) dot.
 	-NUM 	  Scale, decimal plates (def=$BCSCALE).
-	-t 	  Thousands grouping.
-	-T NUM 	  Comma dividers using given spacing."
+	-o NUM 	  Print comma dividers using given spacing in result.
+	-t 	  Print thousands grouping in result."
 
 
 #some formatting functions to use with this script
@@ -288,9 +292,15 @@ define commaprint_(x,g){
 	if(g<1)g=1
 	sign=1;if(x<0){sign=-1;x=-x}
 	os=scale;scale=0
+
+	/* floating point hack */
+	xdec =  x - (x/1);    /* decimal */
+	xint = (x - xdec)/1;  /* integer */
+	if(xdec!=x) x = xint;
+
 	if(sign<0)print \"-\"
-	x+=comma_(x,obase^(g/1))
-	scale=os;return sign*x
+	x+=comma_(x,obase^(g/1)); if(xdec>0) print xdec;
+	scale=os;return sign*(x+xdec)
 };
 /* http://phodd.net/gnu-bc/code/output_formatting.bc
  */
@@ -384,7 +394,7 @@ precff()
 
 
 #parse options
-while getopts ,.0123456789efhlnorRtT:vVz- opt
+while getopts ,.0123456789efhlno:rRtvVz- opt
 do 	case $opt in
 		#change input/output decimal separator
 		,) 	OPTDEC=${OPTDEC:0:1}, ;;
@@ -410,9 +420,11 @@ do 	case $opt in
 		r) 	((++OPTP)) ;;
 		#edit record
 		R) 	OPTP=-100 ;;
+		#print a number with comma dividers using given spacing
+		o) 	((++OPTT)) ;((OPTT_ARG=OPTARG)) || { 	echo "error: bad argument for option \`-o' -- $OPTARG" >&2 ;exit ;}
+			[[ $BASH_VERSION ]] || echo "warning: option \`-o' only works with \`\`bc''" >&2 ;;
 		#thousand separator
-		t|o) 	((++OPTT)) ;;
-		T|O) 	((++OPTT)) ;((OPTT_ARG=OPTARG)) || ((OPTT_ARG=3)) ;;
+		t) 	((++OPTT)) ;;
 		#verbose
 		v) 	((++OPTV)) ;;
 		#print script version
