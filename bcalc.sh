@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.15.3  jun/2022  by mountaineerbr
+# v0.15.5  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -268,22 +268,10 @@ define round_(x, d) {
 /* Serge3leo - https://stackoverflow.com/questions/26861118/rounding-numbers-with-bc-in-bash
  * MetroEast - https://askubuntu.com/questions/179898/how-to-round-decimals-using-bc-in-bash
  */
-/* Truncate trailing zeroes and nines */
-define trunc_(x) {
-	auto os,ts,s,d,tx;
-	os=scale
-	d=length(x)-scale(x)
-	if(d<5||d>scale)d=5
-	ts=scale-d
-	if(scale>=d+d){
-		scale=ts
-		s=1;if(x<0)s=-1
-		x+=s*A^-scale
-		.=scale--;x/=1
-	}
-	for(scale=0;scale<=ts;scale++)if(x==(tx=x/1)){x=tx;break}
-	scale=os;return(x)
-};
+/* Truncate trailing zeroes */
+define trunc_(x){auto os;os=scale;for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}
+/* http://phodd.net/gnu-bc/bcfaq.html
+ */
 /* workhorse function for the below */
 define comma_(x,gp) {
 	t=x%gp
@@ -303,7 +291,10 @@ define commaprint_(x,g){
 	if(sign<0)print \"-\"
 	x+=comma_(x,obase^(g/1))
 	scale=os;return sign*x
-}"
+};
+/* http://phodd.net/gnu-bc/code/output_formatting.bc
+ */
+"
 
 #functions
 #calculators
@@ -332,16 +323,15 @@ calcf()
 		elif ((OPTE)) && [[ $OPTS ]]
 		then 	bceq="scale = $scl; $eq / 1;"
 		else
-			res=$(bc ${OPTL:+-l} "$@" <<<"scale = $scl + 1; $eq / 1;") || return
-			unset BC_ENV_ARGS
-			bc <<-!
-			${BCFUN};
-			scale = $scl;
-			x = round_( ($res) , $scl );
-			if(${OPTS}0<1) x = trunc_( x );
-			if(${OPTT}0>0) dummy = commaprint_( x , ${OPTT_ARG:-3} ) else x;
+			bc ${OPTL:+-l} "$@" <<-! | { 	read ;read ;read ;read ;echo $REPLY ;}
+				$BCFUN;
+				scale = $scl + 1;
+				$eq / 1;
+				if($scl+1==scale) round_( last , scale - 1 ) else round_( last , scale );
+				if(${OPTS:-0}<1) trunc_( last ) else last;
+				if(${OPTT:-0}>0) dummy = commaprint_( last , ${OPTT_ARG:-3} ) else last;
 			!
-			return
+			return ${PIPESTATUS[0]:-${pipestatus[1]}}
 		fi
 		bc ${OPTL:+-l} "$@" <<<"$bceq"
 	fi
