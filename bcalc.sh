@@ -66,7 +66,7 @@ DESCRIPTION
 	Note that this script sets Zsh FORCE_FLOAT and results will be
 	converted back to the closest decimal notation from the internal
 	double-point. In Zsh maths, numbers are truncated after 19 digits
-	(includes the decimal part).
+	of length (includes the decimal part).
 
 	Option -n adds notes to record file entries. If the first posi-
 	tional argument after this option is an INDEX number, adds note
