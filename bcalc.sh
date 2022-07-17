@@ -253,7 +253,7 @@ OPTIONS
 	-, 	  Set decimal separator of input/output as (,) comma.
 	-. 	  Set decimal separator of input/output as (.) dot.
 	-NUM 	  Scale, decimal plates (def=$BCSCALE).
-	-o NUM 	  Print comma dividers using given spacing in result.
+	-o NUM 	  Print result with comma dividers using given spacing.
 	-t 	  Print thousands grouping in result."
 
 
