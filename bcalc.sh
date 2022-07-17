@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.3  jun/2022  by mountaineerbr
+# v0.16.4  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -38,20 +38,20 @@ DESCRIPTION
 	$SN wraps shell calculator (bc) and Zshell maths evaluation
 	and adds some useful features.
 
-	Input EXPRESSION must be one line, multiline is catnated into one
-	line. If no EXPRESSION is given and stdin is not free, reads stdin
-	as input, otherwise prints last result from record file.
+	A simple input EXPRESSION can be set as positional parameter or
+	sent through stdin, otherwise prints last result from record file.
+	This script warps bc and Zsh maths facilities.
 
-	If a historical record file is available, special variables can
-	be replaced with results from former operations. Data in stored
+	If a file with historical records is available, special variables
+	can be replaced with results from former operations. Data is stored
 	as tab separated values (tsv) at \`${BCRECFILE}'.
-	Set -f to disable usage of record file.
+	Set -f to disable use of record file.
 
 	Special variables \`${BCHOLD}' or \`${BCHOLD}0' will be changed to the last re-
 	sult, however \`${BCHOLD}1' and so forth will be changed to the specified
 	result index. The result index number is the same as line number
 	in the record file. Defaults special variable \`${BCHOLD}'. Check result
-	index with options -rrvv.
+	index with options -rv.
 
 	Printing scale can be set with -NUM and reset with \`--'. Scale of
 	floating point numbers are dependent on user input for all opera-
@@ -65,20 +65,17 @@ DESCRIPTION
 
 	Note that this script sets Zsh FORCE_FLOAT and results will be
 	converted back to the closest decimal notation from the internal
-	double-point. In Zsh maths, numbers are truncated after 16 digits
-	of length (includes the decimal part) and precision is limited to
-	a maximum 16 decimal plates.
+	double-point. See BUGS section for information about Zsh maths
+	limits.
 
 	Option -n adds notes to record file entries. If the first posi-
 	tional argument after this option is an INDEX number, adds note
 	to that entry, otherwise adds to the last record entry.
 
-	Option -l loads bc mathlib and option -e extension file or Zshell
-	mathfunc module. Set bc extensions file path in script head source
-	code or as an environmental variable path.
-
-	Rounding and trailing zeroes trimming are performed unless any 
-	option -el is set.
+	Option -l loads bc mathlib. Option -e loads extension file (see
+	ENVIRONMENT section) or Zshell mathfunc module. Option -e also
+	disables defaults scale setting, rounding and trimming of insig-
+	nificant zeroes.
 
 
 DECIMAL SEPARATOR AND THOUSANDS GROUPING
@@ -160,6 +157,9 @@ WARRANTY
 
 
 BUGS
+	Only the last result of multiple operations may be printed and
+	recorded.
+
 	In Zsh double-point maths, numbers are truncated after 16 digits
 	of length (includes the decimal part) and precision is limited
 	to a maximum of 16 decimal plates.
@@ -242,8 +242,8 @@ OPTIONS
 	-n [INDEX] TEXT
 		  Add note to record INDEX or to last record entry.
 	-r [NUM] [MAXWIDTH]
-		  Print last NUM lines (def=10), set column MAXWIDTH (def=40).
-	-rr 	  Print full record with line numbers.
+		  Pretty-print last NUM record entry (def=10).
+	-rr 	  Print raw record with record entry index.
 	-R 	  Edit with \$VISUAL or \$EDITOR (def=vi).
 	
 	FORMATTING
@@ -254,7 +254,7 @@ OPTIONS
 	-t 	  Print thousands grouping in result."
 
 
-#some formatting functions to use with this script
+#bc formatting functions
 BCFUN="/* Round argument 'x' to 'd' digits */
 define round_(x, d) {
 	auto r, s
@@ -317,13 +317,13 @@ calcf()
 	if [[ $ZSH_VERSION ]]
 	then 	((OPTE+OPTL)) && zmodload zsh/mathfunc
 		setopt LOCAL_OPTIONS FORCE_FLOAT
-		typeset -F "${OPTS:-$BCSCALE}" eq
+		typeset -F ${OPTS:-$BCSCALE} eq
 		if ((OPTT))
-		then 	printf "%'.*f\n" "$scl" "$eq"
-		else 	print "$eq"
+		then 	printf "%'.*f\n" $scl $eq
+		else 	print $eq
 		fi
 	else 	if ((!OPTE))
-		then 	bc ${OPTL:+-l} <<-! | { 	IFS=$'\n' read -d'\0' var var var var ;echo $var ;}
+		then 	bc ${OPTL:+-l} <<-! | { 	IFS=$'\n' read -d'\0' var var var var ;echo ${var##*$'\n'} ;}
 				$BCFUN;
 				scale = $scl + 1;
 				$eq / 1;
@@ -352,36 +352,33 @@ notef()
 #https://superuser.com/questions/781558/sed-insert-file-before-last-line
 #http://www.yourownlinux.com/2015/04/sed-command-in-linux-append-and-insert-lines-to-file.html
 
-#-eecc print extensions to user
-opteef()
-{
-	if [[ -e "$BCEXTFILE" ]]
-	then 	cat -- "$BCEXTFILE"
-	elif [[ $ZSH_VERSION ]]
-	then 	print "warning: zsh -- check zsh/mathfunc" >&2 ;return 1
-	else 	echo "err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
-	fi
-}
-
 #print or edit record file
+#usage: precff [NUM] [MAXWIDTH]
+#where NUM is the number of entries to be printed
 precff()
 {
 	local lines truncate
 	((${1:-0})) && lines="$1"
+	truncate="$2"  #max width
+
 	#edit record file
 	if ((OPTP<0))
 	then 	command "${VISUAL:-${EDITOR:-vi}}" -- "$BCRECFILE"
 	#generate record file table
 	elif ((OPTP==1))
-	then 	((${2:-0}>10 && ${2:-600}<600)) && truncate="$2"
+	then 	((${truncate:-0}>10 && ${truncate:-600}<600)) || truncate=40
 		nl -w1 -ba -- "$BCRECFILE" | tail -n"${lines:-10}" \
-		| sed -r -e "s/([^\t]{0,${truncate:-40}})[^\t]*/\1/g" -e 's/^(([^\t]*\t){2})([^\t]*)\t/\1{ \3 }\t/' \
+		| sed -r -e "s/([^\t]{0,${truncate}})[^\t]*/\1/g" -e 's/^(([^\t]*\t){2})([^\t]*)\t/\1{ \3 }\t/' \
 		| if command column --help >/dev/null 2>&1 ;then 	column -ets$'\t' -NIND,RESULT,EXPRESSION,DATE,NOTE ;else 	column -ts$'\t' ;fi \
 		| less -S
-	#print entire record file
+	#print raw record file
 	elif ((OPTP))
-	then 	nl -ba -- "$BCRECFILE"
+	then 	if ((lines))
+		then 	nl -ba -- "$BCRECFILE" | tail -n $lines
+		else 	nl -ba -- "$BCRECFILE"
+		fi
 	fi
+	echo "$BCRECFILE" >&2
 }
 
 
@@ -392,13 +389,13 @@ do 	case $opt in
 		,) 	OPTDEC=${OPTDEC:0:1}, ;;
 		#change input/output decimal separator
 		\.) 	OPTDEC=${OPTDEC:0:1}. ;;
-		#scale (was -s)
+		#scale
 		[0-9]) 	OPTS="$OPTS$opt" ;;
 		#reset scale
 		-) 	OPTS= ;;
 		#load or print bc extensions
-		e) 	((OPTE++)) && { 	opteef ;exit ;}
-			[[ -e $BCEXTFILE ]] && { 	BC_ENV_ARGS="$BCEXTFILE" ;export BC_ENV_ARGS ;}
+		e) 	[[ -e $BCEXTFILE ]] && { 	BC_ENV_ARGS="$BCEXTFILE" ;export BC_ENV_ARGS ;}
+			((OPTE++)) && { 	cat -- "$BCEXTFILE" ; exit ;}
 			OPTL=1 ;;
 		#bc mathlib
 		l) 	OPTL=1 ;;
@@ -414,9 +411,10 @@ do 	case $opt in
 		R) 	OPTP=-100 ;;
 		#print a number with comma dividers using given spacing
 		o) 	[[ $BASH_VERSION ]] || echo "warning: option \`-o' only works with \`\`bc''" >&2
-			((++OPTT)) ;((OPTT_ARG=OPTARG)) || { 	echo "error: bad argument for option \`-o' -- $OPTARG" >&2 ;exit ;} ;;
+			((OPTT_ARG=OPTARG)) || { 	echo "error: bad argument for option \`-o' -- $OPTARG" >&2 ;exit 1 ;}
+			OPTT=1 ;;
 		#thousand separator
-		t) 	((++OPTT)) ;;
+		t) 	OPTT=1 ;;
 		#verbose
 		v) 	((++OPTV)) ;;
 		#print script version
@@ -435,7 +433,7 @@ shift $((OPTIND -1))
 
 EQ="$*"
 [[ ! -t 0 && $#+OPTN+OPTP -eq 0 ]] && EQ=$(</dev/stdin)  #stdin input
-EQ_ORIG="$EQ" EQ="${EQ%;}" EQ="${EQ//[$'\t\n']/ }"
+EQ_ORIG="$EQ" EQ="${EQ%;}" EQ="${EQ//[$'\t']/ }"
 
 #record file special vars and options
 if [[ -e "$BCRECFILE" ]]
@@ -447,9 +445,9 @@ then 	#add note to record
 	then 	precff "$@" ;exit
 	fi
 	
-	#get last result index
+	#get last record index
 	LASTIND=$(wc -l <"$BCRECFILE")
-	#change special variable to corresponding result or retrieve last result if $EQ is empty
+	#change special variable to corresponding record, or retrieve last record if $EQ is empty
 	WORDANCHOR='[^a-zA-Z0-9_]'
 	while [[ ${EQ:=$BCHOLD} =~ $WORDANCHOR${BCHOLD:-@%@%}[0-9]*$WORDANCHOR ||
 		 ${EQ:=$BCHOLD} =~ $WORDANCHOR${BCHOLD:-@%@%}[0-9]*$ ||
@@ -464,6 +462,7 @@ then 	#add note to record
 		((eqind > LASTIND)) && { 	echo "err: invalid index reference -- $eqvar" >&2 ;exit 1 ;}
 		recvar=$(awk "NR == $eqind { 	print \$1 }" "$BCRECFILE")
 
+		recvar="${recvar##*;}"
 		[[ ${EQ// } = "${eqvar:-@%@%}" ]] && SIMPLEVAREQ=1 LASTIND=$eqind
 		EQ="${EQ//"$aleft$eqvar$aright"/$aleft$recvar$aright}" ;[[ $EQ ]] || exit
 	done  #bash3 introduces regex operator
@@ -481,38 +480,26 @@ then 	EQ="${EQ//.}" EQ="${EQ//,/.}"
 fi
 
 #checks
-[[ $ZSH_VERSION ]] && ((OPTS>16)) && echo "warning: Zsh maximum precision is 16 plates" >&2
-((OPTV>1)) && [[ ! $OPTS ]] && echo "defaults scale -- $BCSCALE" >&2
-((OPTV>1)) && [[ $EQ != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
-#multiple decimal separators: "1.2." "1,2," "1.2,3."  ",.,"
-if [[
-	"$EQ" =~ [0-9]*[.][0-9]*[.] ||
-	"$EQ" =~ [0-9]*[,][0-9]*[,] ||
-	"$EQ" =~ [0-9]*[.][0-9]*[,][0-9]*[.] ||
-	"$EQ" =~ [0-9]*[,][0-9]*[.][0-9]*[,] 
-]]
-then 	echo "warning: excess of decimal separators  -- $EQ" >&2
-fi
+[[ $ZSH_VERSION ]] && ((OPTS>16)) &&     echo "warning: Zsh maximum precision is 16 plates" >&2
+((OPTV>1)) && [[ ! $OPTS ]] &&           echo "defaults scale -- $BCSCALE" >&2
+((OPTV>1)) && [[ $EQ != "$EQ_ORIG" ]] && echo "input change   -- $EQ" >&2
 
 #calculate expression result
-RES=$(calcf "$EQ") && [[ ${RES:?internal err} ]] || exit
+RES=$(calcf "$EQ") && [[ $RES ]] || exit
 
-#print to record file? dont record duplicate results
-#TSV fields: result, expression, date and note
-timestamp=$(printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 2>/dev/null \
-	|| { zmodload -aF zsh/datetime b:strftime && strftime '%Y-%m-%dT%H:%M:%S%z' ;} 2>/dev/null \
-	|| date -Iseconds)
-recordout="${RES//,}"$'\t'"$EQ"$'\t'"$timestamp"$'\t'
-if [[ -e "$BCRECFILE" ]]
-then
+#print to record file
+#TSV: result, expression, date and note
+timestamp=$(printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 2>/dev/null || { 	zmodload -aF zsh/datetime b:strftime && strftime '%Y-%m-%dT%H:%M:%S%z' ;} 2>/dev/null || date -Iseconds)
+prres="${RES//,}"
+recordout="${prres//$'\n'/;}"$'\t'"${EQ//$'\n'/;}"$'\t'"$timestamp"$'\t'
+if [[ $BCRECFILE ]]
+then 	[[ -e $BCRECFILE ]] && 
 	IFS=$'\t' read -r lastres lasteq lastdate lastnote < <(tail -1 "$BCRECFILE") 
-	if [[ ${RES//,} != "$lastres" || ${EQ//[$IFS]} != "${lasteq//[$IFS]}" ]] && [[ $SIMPLEVAREQ -eq 0 ]]
+	if [[ $prres != "$lastres" || ${EQ//[$IFS;]} != "${lasteq//[$IFS;]}" ]] && ((!SIMPLEVAREQ))
 	then 	echo "$recordout" >>"$BCRECFILE" ;((++LASTIND))
 	fi
-elif [[ $BCRECFILE ]]  #init tsv
-then 	echo "$recordout" >>"$BCRECFILE"
 fi
-unset recordout lastres lasteq lastdate lastnote timestamp
+unset prres recordout lastres lasteq lastdate lastnote timestamp
 
 #trim trailing zeroes, skip if -es
 if [[ $ZSH_VERSION ]] && [[ ! $OPTE$OPTS ]]
@@ -523,9 +510,9 @@ then 	if [[ $RES = *[.]*[!0]${RES##*[!0]} ]]
 	fi
 fi
 
-#swap output decimal and thousands delimiters?
+#swap output decimal and thousands delimiters
 [[ $OPTDEC = ?, || $OPTDEC = , ]] && RES="${RES//./@}" RES="${RES//,/.}" RES="${RES//@/,}"
-#print special variable index, too?
+#print special variable index
 ((OPTV && LASTIND)) && RES="$RES"$'\t'"#$LASTIND#"
 
 echo "$RES"
