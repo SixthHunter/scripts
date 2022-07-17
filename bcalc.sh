@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16  jun/2022  by mountaineerbr
+# v0.16.1  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -53,9 +53,9 @@ DESCRIPTION
 	in the record file. Defaults special variable \`${BCHOLD}'. Check result
 	index with options -rrvv.
 
-	Printing scale can be set with -NUM. Scale of floating point num-
-	bers are dependent on user input for all operations except division
-	in bc. Defaults scale is ${BCSCALE}.
+	Printing scale can be set with -NUM and reset with \`--'. Scale of
+	floating point numbers are dependent on user input for all opera-
+	tions except division in bc. Defaults scale is ${BCSCALE}.
 
 	In Zshell maths, floating point evaluation is performed automati-
 	cally depending on user input. However note that \`3' is an integer
@@ -310,40 +310,33 @@ define commaprint_(x,g){
 #calculators
 calcf()
 {
-	local eq bceq scl
+	local eq scl var
 	eq="${1%;}"
-	scl=${OPTS:-$BCSCALE}
-	((OPTT)) && scl=${OPTS:-2}
 	[[ ${eq// } ]] || return
+	scl=${OPTS:-$BCSCALE} ;((OPTT)) && scl=${OPTS:-2}
 
 	if [[ $ZSH_VERSION ]]
-	then 	#zsh
-		((OPTE+OPTL)) && zmodload zsh/mathfunc
+	then 	((OPTE+OPTL)) && zmodload zsh/mathfunc
 		setopt LOCAL_OPTIONS FORCE_FLOAT
 		typeset -F "${OPTS:-$BCSCALE}" eq
-
-		if ((OPTT))  #add thousand separator -t
+		if ((OPTT))
 		then 	printf "%'.*f\n" "$scl" "$eq"
 		else 	print "$eq"
 		fi
-	else 	#bc
-		set --
-		if ((OPTE)) && [[ ! $OPTS ]]
-		then 	bceq="$eq;"
-		elif ((OPTE)) && [[ $OPTS ]]
-		then 	bceq="scale = $scl; $eq / 1;"
-		else
-			bc ${OPTL:+-l} "$@" <<-! | { 	read ;read ;read ;read ;echo $REPLY ;}
+	else 	if ((!OPTE))
+		then 	bc ${OPTL:+-l} <<-! | { 	IFS=$'\n' read -d'\0' var var var var ;echo $var ;}
 				$BCFUN;
 				scale = $scl + 1;
 				$eq / 1;
 				if($scl+1==scale) round_( last , scale-1 ) else last;
-				if(${OPTS:-0}<1) trunc_( last ) else last;
-				if(${OPTT:-0}>0) dummy = commaprint_( last , ${OPTT_ARG:-3} ) else last;
+				if(${OPTS:-0}<1)  trunc_( last ) else last;
+				if(${OPTT:-0}>0)  dummy = commaprint_( last , ${OPTT_ARG:-3} ) else last;
 			!
 			return ${PIPESTATUS[0]:-${pipestatus[1]}}
+		elif ((OPTE)) && [[ $OPTS ]]
+		then 	eq="scale = $scl; $eq / 1;"
 		fi
-		bc ${OPTL:+-l} "$@" <<<"$bceq"
+		bc ${OPTL:+-l} <<<"$eq"
 	fi
 }
 
@@ -366,8 +359,8 @@ opteef()
 	if [[ -e "$BCEXTFILE" ]]
 	then 	cat -- "$BCEXTFILE"
 	elif [[ $ZSH_VERSION ]]
-	then 	print "$SN: warning: zsh -- check zsh/mathfunc" >&2 ;return 1
-	else 	echo "$SN: err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
+	then 	print "warning: zsh -- check zsh/mathfunc" >&2 ;return 1
+	else 	echo "err: bc extension file not available -- $BCEXTFILE" >&2 ;return 1
 	fi
 }
 
@@ -408,8 +401,8 @@ do 	case $opt in
 		e) 	((OPTE++)) && { 	opteef ;exit ;}
 			[[ -e $BCEXTFILE ]] && { 	BC_ENV_ARGS="$BCEXTFILE" ;export BC_ENV_ARGS ;}
 			OPTL=1 ;;
-		l) #bc mathlib
-			OPTL=1 ;;
+		#bc mathlib
+		l) 	OPTL=1 ;;
 		#disable use record file
 		f) 	unset BCRECFILE ;;
 		#print help
@@ -421,8 +414,8 @@ do 	case $opt in
 		#edit record
 		R) 	OPTP=-100 ;;
 		#print a number with comma dividers using given spacing
-		o) 	((++OPTT)) ;((OPTT_ARG=OPTARG)) || { 	echo "error: bad argument for option \`-o' -- $OPTARG" >&2 ;exit ;}
-			[[ $BASH_VERSION ]] || echo "warning: option \`-o' only works with \`\`bc''" >&2 ;;
+		o) 	[[ $BASH_VERSION ]] || echo "warning: option \`-o' only works with \`\`bc''" >&2
+			((++OPTT)) ;((OPTT_ARG=OPTARG)) || { 	echo "error: bad argument for option \`-o' -- $OPTARG" >&2 ;exit ;} ;;
 		#thousand separator
 		t) 	((++OPTT)) ;;
 		#verbose
@@ -502,7 +495,7 @@ then 	echo "warning: excess of decimal separators  -- $EQ" >&2
 fi
 
 #calculate expression result
-RES=$(calcf "$EQ") && [[ $RES ]] || exit
+RES=$(calcf "$EQ") && [[ ${RES:?internal err} ]] || exit
 
 #print to record file? dont record duplicate results
 #TSV fields: result, expression, date and note
