@@ -66,8 +66,8 @@ DESCRIPTION
 	Note that this script sets Zsh FORCE_FLOAT and results will be
 	converted back to the closest decimal notation from the internal
 	double-point. In Zsh maths, numbers are truncated after 16 digits
-	of length (includes the decimal part) and maximum precision is
-	limited to 16 decimal plates.
+	of length (includes the decimal part) and precision is limited to
+	a maximum 16 decimal plates.
 
 	Option -n adds notes to record file entries. If the first posi-
 	tional argument after this option is an INDEX number, adds note
@@ -161,8 +161,8 @@ WARRANTY
 
 BUGS
 	In Zsh double-point maths, numbers are truncated after 16 digits
-	of length (includes the decimal part) and maximum precision is
-	limited to 16 decimal plates.
+	of length (includes the decimal part) and precision is limited
+	to a maximum of 16 decimal plates.
 
 
 USAGE EXAMPLES
