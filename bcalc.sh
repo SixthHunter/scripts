@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.4  jun/2022  by mountaineerbr
+# v0.16.5  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -490,8 +490,8 @@ RES=$(calcf "$EQ") && [[ $RES ]] || exit
 #print to record file
 #TSV: result, expression, date and note
 timestamp=$(printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 2>/dev/null || { 	zmodload -aF zsh/datetime b:strftime && strftime '%Y-%m-%dT%H:%M:%S%z' ;} 2>/dev/null || date -Iseconds)
-prres="${RES//,}"
-recordout="${prres//$'\n'/;}"$'\t'"${EQ//$'\n'/;}"$'\t'"$timestamp"$'\t'
+prres="${RES//,}" prres="${prres//$'\n'/;}"
+recordout="$prres"$'\t'"${EQ//$'\n'/;}"$'\t'"$timestamp"$'\t'
 if [[ $BCRECFILE ]]
 then 	[[ -e $BCRECFILE ]] && 
 	IFS=$'\t' read -r lastres lasteq lastdate lastnote < <(tail -1 "$BCRECFILE") 
