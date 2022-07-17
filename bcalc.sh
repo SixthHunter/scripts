@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.1  jun/2022  by mountaineerbr
+# v0.16.2  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -58,17 +58,19 @@ DESCRIPTION
 	tions except division in bc. Defaults scale is ${BCSCALE}.
 
 	In Zshell maths, floating point evaluation is performed automati-
-	cally depending on user input. However note that \`3' is an integer
-	while \`3.' is a floating point number. Zsh keeps an internal dou-
-	ble-precision floating point representation (double C type) of
-	numbers, and expression \`3/4' evaluates to \`.75' rather than \`0'.
-	Note that in this script FORCE_FLOAT is set by defaults and that
-	results will be converted back to the closest decimal notation
-	from the internal double-point.
+	cally depending on user input. Note that \`3' is an integer while
+	\`3.' is a floating point number. Zsh keeps an internal double-
+	precision (double C type) representation of numbers, and expression
+	\`3/4' evaluates to \`.75' rather than \`0'.
 
-	Option -n adds notes to record file entries. If the first positional
-	argument after this option is an INDEX number, adds note to that
-	entry, otherwise adds to the last record entry.
+	Note that this script sets Zsh FORCE_FLOAT and results will be
+	converted back to the closest decimal notation from the internal
+	double-point. In Zsh maths, numbers are truncated after 19 digits
+	(includes the decimal part).
+
+	Option -n adds notes to record file entries. If the first posi-
+	tional argument after this option is an INDEX number, adds note
+	to that entry, otherwise adds to the last record entry.
 
 	Option -l loads bc mathlib and option -e extension file or Zshell
 	mathfunc module. Set bc extensions file path in script head source
