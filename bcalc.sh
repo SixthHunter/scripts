@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.2  jun/2022  by mountaineerbr
+# v0.16.3  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -38,9 +38,9 @@ DESCRIPTION
 	$SN wraps shell calculator (bc) and Zshell maths evaluation
 	and adds some useful features.
 
-	Input EXPRESSION must be one line, multiline is transformed into
-	one line. If no EXPRESSION is given and stdin is not free, reads
-	stdin as input, otherwise prints last result from record file.
+	Input EXPRESSION must be one line, multiline is catnated into one
+	line. If no EXPRESSION is given and stdin is not free, reads stdin
+	as input, otherwise prints last result from record file.
 
 	If a historical record file is available, special variables can
 	be replaced with results from former operations. Data in stored
@@ -65,8 +65,9 @@ DESCRIPTION
 
 	Note that this script sets Zsh FORCE_FLOAT and results will be
 	converted back to the closest decimal notation from the internal
-	double-point. In Zsh maths, numbers are truncated after 19 digits
-	of length (includes the decimal part).
+	double-point. In Zsh maths, numbers are truncated after 16 digits
+	of length (includes the decimal part) and maximum precision is
+	limited to 16 decimal plates.
 
 	Option -n adds notes to record file entries. If the first posi-
 	tional argument after this option is an INDEX number, adds note
@@ -153,19 +154,15 @@ WARRANTY
 
 	Tested with Bash 5.0 and Zsh 5.8. Requires GNU coreutils.
 
-	If useful, please consider sending me a nickle! =)
+	If useful, please consider sending me a nickle!  =)
 
 		bc1qlxm5dfjl58whg6tvtszg5pfna9mn2cr2nulnjr
 
 
 BUGS
-	Bash and Zsh have got decimal precision limits when printig re-
-	sults with thousands grouping (option -to).
-
-	Double precision numbers are accurate up to sixteen decimal
-	places in Zsh maths and Bash \`printf'.
-
-	Multiline input not supported.
+	In Zsh double-point maths, numbers are truncated after 16 digits
+	of length (includes the decimal part) and maximum precision is
+	limited to 16 decimal plates.
 
 
 USAGE EXAMPLES
@@ -484,6 +481,7 @@ then 	EQ="${EQ//.}" EQ="${EQ//,/.}"
 fi
 
 #checks
+[[ $ZSH_VERSION ]] && ((OPTS>16)) && echo "warning: Zsh maximum precision is 16 plates" >&2
 ((OPTV>1)) && [[ ! $OPTS ]] && echo "defaults scale -- $BCSCALE" >&2
 ((OPTV>1)) && [[ $EQ != "$EQ_ORIG" ]] && echo "input change -- $EQ" >&2
 #multiple decimal separators: "1.2." "1,2," "1.2,3."  ",.,"
