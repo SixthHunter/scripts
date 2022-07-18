@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.5  jun/2022  by mountaineerbr
+# v0.16.6  jun/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -158,7 +158,7 @@ WARRANTY
 
 BUGS
 	Only the last result of multiple operations may be printed and
-	recorded.
+	recorded, but multiline input is generally not supported.
 
 	In Zsh double-point maths, numbers are truncated after 16 digits
 	of length (includes the decimal part) and precision is limited
