@@ -4,52 +4,52 @@
 
 NAME | DESCRIPTION
 :-------------|:-----------
-__ala.sh__ | Arch Linux Archives (aka ALA) explorer
-__anta.sh__ | Explorador do sítio (website spider) &lt;oantagonista.com&gt;
-__bcalc.sh__ | Simple wrapper for Bash Bc and Zsh maths that keeps a record of results
-__bcalc_ext.bc__ | *bcalc.sh* extensions for bash bc
-__cep.sh__ | CEP por nome de rua e vice-versa via api dos Correios brasileiros
-__ctemp.sh__ | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
-__datediff.sh__ | Calculate time ranges in different units (was `ddate.sh` )
-__faster_sh.txt__ | Tips for improving script performances, specific for some use cases, text document
-__grep.sh__ |  Grep files with shell built-ins
-__inmet.sh__ | Download satellite images from Brazilian Instituto Nacional de Meteorologia
-__ipmet.sh__ | Download radar images from Brazilian Instituto de Pesquisas Meteorológicas (UNESP)
-__ul.sh__ |  Generate html lists from URLs
-__urlgrep.sh__ | Grep full-text content from URL list
-__wc.sh__ |  Print line, word and character count for files with shell built-ins
-__wf.sh__ |  Weather forecast (Norway Meteorological Institute)
+[ala.sh](ala.sh) | Arch Linux Archives (aka ALA) explorer
+[anta.sh](anta.sh) | Explorador do sítio (website spider) &lt;oantagonista.com&gt;
+[bcalc.sh](bcalc.sh) | Simple wrapper for Bash Bc and Zsh maths that keeps a record of results
+[bcalc_ext.bc](bcalc_ext.bc) | *bcalc.sh* extensions for bash bc
+[cep.sh](cep.sh) | CEP por nome de rua e vice-versa via api dos Correios brasileiros
+[ctemp.sh](ctemp.sh) | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
+[datediff.sh](datediff.sh) | Calculate time ranges in different units (was `ddate.sh` )
+[faster_sh.txt](faster_sh.txt) | Tips for improving script performances, specific for some use cases, text document
+[grep.sh](grep.sh) |  Grep files with shell built-ins
+[inmet.sh](inmet.sh) | Download satellite images from Brazilian Instituto Nacional de Meteorologia
+[ipmet.sh](ipmet.sh) | Download radar images from Brazilian Instituto de Pesquisas Meteorológicas (UNESP)
+[ul.sh](ul.sh) |  Generate html lists from URLs
+[urlgrep.sh](urlgrep.sh) | Grep full-text content from URL list
+[wc.sh](wc.sh) |  Print line, word and character count for files with shell built-ins
+[wf.sh](wf.sh) |  Weather forecast (Norway Meteorological Institute)
 
 
 ## MARKET-RELATED
 
 NAME | DESCRIPTION
 :-------------|:-----------
-__bakkt.sh__ | Price and contract/volume tickers from bakkt public api
-__binance.sh__ |  Binance public API, crypto converter, prices, book depth, coin ticker
-__binfo.sh__ | Blockchain explorer for bitcoin; uses <blockchain.info> and <blockchair.com> public apis; notification on new block found
-__brasilbtc.sh__ | Fetches bitcoin rates from brazilian exchanges public apis. Puxa cotações de bitcoin de agências de câmbio brasileiras de apis públicas
-___cgk.sh___ | <Coinggecko.com> public api, convert one crypto, bank/fiat currency or metal into any another, market ticker, cryptocurrency ticker. This is my favorite everyday-use script for all-currency rates!
-__cmc.sh__ |  <Coinmarketcap.com> convert any amount of one crypto, bank/fiat currency or metal into any another, NON-public api access
-__myc.sh__ | <Mycurrency.net> public api, central bank currency rate converter
-__novad.sh__ | puxa dados das apis públicas da NovaDax brasileira. fetch public api data from NovaDax brazilian enchange
-__ourominas.sh__ | Ourominas (precious metals exchange) rates public api. Pega taxas da api pública da Ouro Minas
-__parmetal.sh__ | Parmetal (precious metals exchange) rates public api. Pega taxas da api pública da Parmetal
-__stocks.sh__ | <Financialmodelingprep.com> latest and historical stock and major index rates
-__uol.sh__ | Fetches rates from uol service provider public api. Puxa dados de páginas da api pública do uol economia
-__whalealert.sh__ | Data from whale-alert.io free api with the latest whale transactions.
-__yahooscrape.sh__ | Scrape some Yahoo! Finance tickers
+[bakkt.sh](bakkt.sh) | Price and contract/volume tickers from bakkt public api
+[binance.sh](binance.sh) |  Binance public API, crypto converter, prices, book depth, coin ticker
+[binfo.sh](binfo.sh) | Blockchain explorer for bitcoin; uses <blockchain.info> and <blockchair.com> public apis; notification on new block found
+[brasilbtc.sh](brasilbtc.sh) | Fetches bitcoin rates from brazilian exchanges public apis. Puxa cotações de bitcoin de agências de câmbio brasileiras de apis públicas
+[cgk.sh](cgk.sh) | <Coinggecko.com> public api, convert one crypto, bank/fiat currency or metal into any another, market ticker, cryptocurrency ticker. This is my favorite everyday-use script for all-currency rates!
+[cmc.sh](cmc.sh) |  <Coinmarketcap.com> convert any amount of one crypto, bank/fiat currency or metal into any another, NON-public api access
+[myc.sh](myc.sh) | <Mycurrency.net> public api, central bank currency rate converter
+[novad.sh](novad.sh) | puxa dados das apis públicas da NovaDax brasileira. fetch public api data from NovaDax brazilian enchange
+[ourominas.sh](ourominas.sh) | Ourominas (precious metals exchange) rates public api. Pega taxas da api pública da Ouro Minas
+[parmetal.sh](parmetal.sh) | Parmetal (precious metals exchange) rates public api. Pega taxas da api pública da Parmetal
+[stocks.sh](stocks.sh) | <Financialmodelingprep.com> latest and historical stock and major index rates
+[uol.sh](uol.sh) | Fetches rates from uol service provider public api. Puxa dados de páginas da api pública do uol economia
+[whalealert.sh](whalealert.sh) | Data from whale-alert.io free api with the latest whale transactions.
+[yahooscrape.sh](yahooscrape.sh) | Scrape some Yahoo! Finance tickers
 
 
 ## BITCOIN BLOCKCHAIN-RELATED
 
 NAME | DESCRIPTION
 :-------------|:-----------
-__bitcoin.blk.sh__ | Bitcoin block information and functions
-__bitcoin.hx.sh__ | Create base58 address types from public key and WIF from private keys
-__bitcoin.tx.sh__ |  Parse transactions by hash or transaction json data
-__blockchair.btcoutputs.sh__ |  Download blockchair output dump files systematically
-__zzz.bitcoin.parsedTxs.txt__ | Example of parsed transactions from block 714176
+[bitcoin.blk.sh](bitcoin.blk.sh) | Bitcoin block and blockchain information
+[bitcoin.hx.sh](bitcoin.hx.sh) | Create base58 address types from public key and WIF from private keys
+[bitcoin.tx.sh](bitcoin.tx.sh) |  Parse transactions by hash or transaction json data
+[blockchair.btcoutputs.sh](blockchair.btcoutputs.sh) |  Download blockchair output dump files systematically
+_zzz.bitcoin.parsedTxs.txt_ | Example of parsed transactions from block 714176
 
 Bitcoin scripts warp about `bitcoin-cli` (bitcoind) and try to parse data.
 `bitcoin.tx.sh` is transaction-centred while `bitcoin.blk.sh` is block-centred.

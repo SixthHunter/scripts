@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # datediff.sh - Calculate time ranges between dates (was `ddate.sh')
-# v0.19.16  jun/2022  mountaineerbr  GPLv3+
+# v0.19.17  jun/2022  mountaineerbr  GPLv3+
 shopt -s extglob  #bash2.05b+
 
 HELP="NAME
@@ -71,9 +71,9 @@ REFINEMENT RULES
 	decided to mimic hroptatyr's \`datediff' refinement rules as often
 	as possible.
 
-	Script error rate is estimated to be lower than one percent after
-	extensive testing with selected and corner-case sample dates and
-	times. Check script source code for details.
+	Script error rate of the core code is estimated to be lower than
+	one percent after extensive testing with selected and corner-case
+	sample dates and times. Check script source code for details.
 
 
 SEE ALSO
@@ -155,7 +155,7 @@ EXAMPLES
 OPTIONS
 	-[0-9] 	Set scale for single unit intervals.
 	-D 	Debug, unset package \`date' warping.
-	-dd 	Debug, perform checks (check source for info).
+	-dd 	Debug, perform checks (see source for info).
 	-f FMT 	Input time format string (only with BSD \`date').
 	-h 	Print this help page.
 	-l YEAR	Check if YEAR is leap year (YEAR format is YYYY).
@@ -405,7 +405,7 @@ mainf()
 	((TZh==0 && TZm==0 && TZs==0)) && TZ_neg=+1
 	[[ $TZh$TZm$TZs = *([0-9+-]) && ! $unix2 ]] || unset TZh TZm TZs  #we don't care about $TZ if `date' was available
 
-	#24h clock and input leap second support (these $*tz parameters will be zeroed later)
+	#24h clock and input leap second support (these $tz* parameters will be zeroed later)
 	((hourA==24)) && (( (neg_tzA>0 ? (tzAh-=hourA-23) : (tzAh+=hourA-23) ) , (hourA-=hourA-23) ))
 	((hourB==24)) && (( (neg_tzB>0 ? (tzBh-=hourB-23) : (tzBh+=hourB-23) ) , (hourB-=hourB-23) ))
 	 ((minA==60)) && (( (neg_tzA>0 ?  (tzAm-=minA-59) :  (tzAm+=minA-59) ) ,   (minA-=minA-59) ))
@@ -543,7 +543,7 @@ mainf()
 	then 	#echo "warning: input DATE or \$TZ contains timezone ID or name. Support requires package \`date'" >&2
 		unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs
 	else 	unset tzA tzB  tzAh tzBh tzAm  tzBm tzAs tzBs  TZh TZm TZs
-	fi  #``Offset is *from* UTC''. Environment $TZ applies to both DATES.
+	fi  #Offset is *from* UTC, while $TZ is *to* UTC. Environment $TZ applies to both DATES.
 
 
 	#sort dates (if no `date' package)
@@ -752,7 +752,7 @@ mainf()
 			scale = s  
 			return r
 		};
-		scale = 16;
+		scale = ($SCL + 1);
 		r( (${years_between:-0} + ( (${range:-0} - ( (${daycount_years:-0} + ${daycount_leap_years:-0}) * 3600 * 24) ) / (${date1_year_days_adj:-0} * 3600 * 24) ) ) , $SCL); /**  YEARS  **/
 		r( (${monthcount:-0} + ( (${range:-0} - (${fullmonth_days_save:-0} * 3600 * 24) ) / (${date1_month_max_day:-0} * 3600 * 24) ) ) , $SCL); /**  MONTHS **/
 		r( (${range:-0} / 604800) , $SCL); /**  WEEKS  **/
