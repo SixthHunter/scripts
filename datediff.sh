@@ -716,7 +716,7 @@ mainf()
 	((range = (d_sum * 3600 * 24) + (h * 3600) + (m * 60) + s))
 
 	#generate unix times?
-	((GETUNIX)) && { 	echo $range ; unset GETUNIX ;return ${ret:1} ;}
+	((GETUNIX)) && { 	echo $range ; unset GETUNIX ;return ${ret:-0} ;}
 	if [[ ! $unix2 ]]
 	then 	badges="$badges#"
 		if ((
