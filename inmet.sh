@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # download satellite images from
 # Brazilian National Institute of Meteorology
 # <https://satelite.inmet.gov.br/>
-# by mountaineerbr  jul/2021
+# by mountaineerbr  ago/2022
 # requires curl and jq
 # usage: $  inmet.sh  2020-12-15
 
@@ -17,47 +17,41 @@ URLS=(
 
 #date
 DATE="${1:-$(date -I)}"
-#DATE=2020-12-15
-
-#results directory
-RESULTDIR=INMET
-RESULTDIR="${PWD%/$RESULTDIR}/$RESULTDIR"
 
 #maximum async jobs
 JOBMAX=10
 
+#results directory
+TEMPD="${TMPDIR:-/tmp}/inmet"
+
 #temp buffers
-TMPD="$( mktemp -d )" || exit
+BUFD="$TEMPD/cache"
 
 
-#clean func
 cleanf()
 {
 	trap \  INT HUP EXIT
 
 	pkill -P $$
-
 	wait
-	[[ -d "$TMPD" ]] && rm -rf "$TMPD"
 
-	echo -e "\nresults at -- $RESULTDIR"
-	exit 0
+	[[ -d "$BUFD" ]] && rm -rf "$BUFD"
+	echo -e "\nresults at -- $TEMPD"
+	exit
 }
 
 
-#trap cleaning
 trap cleanf INT HUP EXIT
 
-#ckeck/make results dir
-[[ -d "$RESULTDIR" ]] || mkdir "$RESULTDIR" || exit
+mkdir -pv "$BUFD" || exit
 
 for url in "${URLS[@]}"
 do
 	((m++))
-	data="$TMPD/data.$m.json"
+	data="$BUFD/data.$m.json"
 	
 	echo
-	#dl json+base64  data
+	#json+base64 data
 	curl -L -o "$data" --compressed "$url/$DATE" || exit
 
 	#get ids
@@ -65,33 +59,28 @@ do
 
 	n=0
 	for i in "${IDS[@]}"
-	do
-		((n++))
-
+	do 	((n++))
 		#asynchronous
 		{
-			#buffer file
-			buf="$TMPD/$m.$n.buffer.json"
+			buf="$BUFD/$m.$n.buffer.json"
 
 			jq -r ".[]|select(.id==$i)" "$data" > "$buf"
 
 			nome="$(jq -r '"\(.nome)_\(.satelite // "sat")"' "$buf")"
 			#ext="$( jq -r '.base64' "$buf" | cut -f1 -d\; | cut -f2 -d/ )"
 			ext=jpg
-			tgt="$RESULTDIR/$nome.$ext"
+			tgt="$TEMPD/$nome.$ext"
 
-			[[ -e "$tgt" ]] ||
-				jq -r '.base64' "$buf" | cut -f2 -d, | base64 -di > "$tgt"
+			[[ -e "$tgt" ]] || jq -r '.base64' "$buf" | cut -f2 -d, | base64 -di > "$tgt"
 		} &
 
 		echo -ne "url: $m/${#URLS[@]}  file: $n/${#IDS[@]}  \r"
 
-		#job control (bash)
+		#bash job control
 		while jobs=( $(jobs -p) ) ;((${#jobs[@]} > JOBMAX))
-		do sleep 0.04
+		do 	sleep 0.04
 		done
 	done
-
 	wait
 done
 

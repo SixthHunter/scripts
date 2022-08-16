@@ -1,5 +1,5 @@
-#!/bin/bash
-# v0.3.3
+#!/usr/bin/env bash
+# v0.3.4
 # imagens de radar do ipmet
 # Instituto de Pesquisas Meteorológicas (UNESP)
 
@@ -8,10 +8,10 @@ IMGVIEWER=( feh )
 
 #tempo entre conexões
 SLEEP=6m
-SLEEPERR=30m
+SLEEPERR=30m  #on error
 
 #temp dir
-TEMPD="${TMPDIR:-/tmp}/ipmet_radar"
+TEMPD="${TMPDIR:-/tmp}/ipmet"
 
 #keep track of process
 PIDFILE="${TEMPD%/}/ipmet.pid"
@@ -36,24 +36,21 @@ ipmetf()
 {
 	local data name info time ret
 
-	#create dir if it does not exist
-	[[ -d "$TEMPD" ]] || mkdir -pv "$TEMPD" || return
+	[[ -d "$TEMPD" ]] || mkdir -pv "$TEMPD" || exit
 
-	data="$( curl -L --compressed "$BASEURL/2carga_img.php" )"
-	name="$( sed -nE 's/.*(nova.jpg\?[0-9]+).*/\1/p' <<<"$data" )"
-	info="$( sed -nE 's/.*(Imagem Composta dos Radares.*)<.*/\1/p' <<<"$data" )"
-	time="$( grep -Eo '[0-9]+/[0-9]+/[0-9: ]+$' <<<"$info" )"
+	data=$( curl -L --compressed "$BASEURL/2carga_img.php" )
+	name=$( sed -nE 's/.*(nova.jpg\?[0-9]+).*/\1/p' <<<"$data" )
+	info=$( sed -nE 's/.*(Imagem Composta dos Radares.*)<.*/\1/p' <<<"$data" )
+	time=$( grep -Eo '[0-9]+/[0-9]+/[0-9: ]+$' <<<"$info" )
 	TEMPFILE="${TEMPD%/}/ipmet_${time//[^a-zA-Z0-9:]/_}.jpg"
 
 	#if file does not exist already
 	#download new image to file
 	if [[ ! -s "$TEMPFILE" ]]
-	then curl -L --compressed --header "$REFERER" "$BASEURL/$name" -o "$TEMPFILE" ;ret=$?
+	then 	curl -L --compressed --header "$REFERER" "$BASEURL/$name" -o "$TEMPFILE" ;ret=$?
 	fi
 
-	echo "$info"
-	echo "$TEMPFILE"
-
+	echo -e "$info\n$TEMPFILE"
 	return ${ret:-0}
 }
 
@@ -66,8 +63,7 @@ trapf()
 
 #opções
 while getopts hl c
-do
-    case $c in
+do  case $c in
         h) echo "$HELP" ;exit ;;
         l) OPTLOOP=1 ;;
         \?) exit 1 ;;
@@ -82,9 +78,9 @@ unset c
 if ((OPTLOOP))
 then
 	trap trapf INT TERM
-	<<<"$$" tee "$PIDFILE"
+	tee "$PIDFILE" <<<$$ 
 	while true
-	do ipmetf || sleep $SLEEPERR ;sleep $SLEEP
+	do 	ipmetf || sleep $SLEEPERR ;sleep $SLEEP
 	done
 else
 	ipmetf && ( "${IMGVIEWER[@]}" "$TEMPFILE" & )
