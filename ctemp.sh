@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.5.2  sep/2022  by mountaineerbr
+# v0.5.3  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -29,13 +29,16 @@ SYNOPSIS
 
 	If no unit is given, toggling between Celsius and Fahrenheit
 	units will be activated for absolute temperature conversions.
-	Toggling creates a temporary file at /tmp or equivalent.
+	Toggling creates a temporary file at /tmp or equivalent. Input
+	from stdin is supported.
 
 	Option -r deals with relative temperatures conversions; for
 	example, a change of 45 degrees Fahrenheit corresponds to a
 	change of 25 degrees Celsius. 
 
-	Option -NUM sets scale, NUM must be an integer; defaults=$SCALEDEF .
+	Option -NUM sets scale, NUM must be an integer; defaults=$SCALEDEF.
+	Floating point results are rounded to scale and trailing zeroes
+	are trimmed.
 
 	Temperature unit conversions are nonlinear; for example, temper-
 	ature conversions between Fahrenheit and Celsius scales cannot
@@ -98,6 +101,7 @@ USAGE EXAMPLES
 	$ $SN -4 10cf
 	$ $SN -r -- 10cf
 	$ $SN -- -273.15 C K
+	$ echo 20 | $SN c
 
 
 OPTIONS
@@ -147,7 +151,7 @@ calcf()
 #convert amongst absolute temps
 absolutef()
 {
-	local res tot
+	local tot degsign res
 	typeset -u tot
 	dontf "$*" || return
 
@@ -176,14 +180,15 @@ absolutef()
 		else 	tot=f res=$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" )
 		fi
 	fi
-	printf '%s%s%s\n' "$res" "${HELPER- º}" "${HELPER-$tot}"
-	
+
+	[[ $tot = [kK] ]] || degsign=º
+	printf '%s%s%s\n' "$res" "${HELPER-$'\t'$degsign}" "${HELPER-$tot}"
 }
 
 #convert amongst relative temps
 relativef()
 {
-	local tot kzero kvar kdelta tzero tvar tdelta
+	local tot degsign kzero kvar kdelta tzero tvar tdelta
 	typeset -l tot
 	tot="$TOT"
 	dontf "$*" || return
@@ -208,7 +213,8 @@ relativef()
 	tvar=$(  HELPER= FROMT=k absolutef "$kdelta" )
 	tdelta=$(calcf "$tvar - ( $tzero )" )
 
-	printf '%s%s%s\n' "$tdelta" "${HELPER- º}" "${HELPER-$tot}"
+	[[ $tot = [kK] ]] || degsign=º
+	printf '%s%s%s\n' "$tdelta" "${HELPER-$'\t'$degsign}" "${HELPER-$tot}"
 }
 
 
@@ -238,13 +244,15 @@ shift $(( OPTIND - 1 ))
 unset c
 
 #are there no arguments?
-if ((${#@}==0))
+if ((${#@}==0)) && [[ -t 0 ]]
 then 	echo "$HELP" >&2
 	exit 1
 fi
 
+[[ "$*" != *[0-9]* && ! -t 0 ]] && set -- $(</dev/stdin) "$@"
+
 typeset -l UNITS
-UNITS="${*//[^a-z]}" UNITS="${UNITS//celsius/c}"
+UNITS="$*" UNITS="${UNITS//[^a-z]}" UNITS="${UNITS//celsius/c}"
 UNITS="${UNITS//farenheit/f}" UNITS="${UNITS//kelvin/k}"
 if ILLEGAL='abdeg-jl-z' ;[[ "$UNITS" = *[$ILLEGAL]* ]]
 then 	printf '%s: err: illegal unit -- %s\n' "$SN" "${UNITS//[^${ILLEGAL}]}" >&2
@@ -260,7 +268,7 @@ set -- "${@/,/.}" 	#change comma to dot
 (( ${#UNITS} )) && FROMT="${UNITS:0:1}"
 
 #to-unit is always the last
-(( ${#UNITS} > 1 )) && TOT="${UNITS:$#:1}"
+(( ${#UNITS} > 1 )) && TOT="${UNITS:$#-1:1}"
 
 #toggle
 TOGGLETTEMP="${TMPDIR:-/tmp}/$SN.$USER.togglet"
