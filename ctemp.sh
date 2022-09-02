@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.5.1  sep/2022  by mountaineerbr
+# v0.5.2  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -51,16 +51,16 @@ SYNOPSIS
 
 FORMULAS
 	Formulas for absolute temperature convertions.
-		Tc  = (5/9)*(Tf-32)
-		Tf  = (9/5)*Tc+32
-		Tk  = Tc+273.15
+		 Tc = (5/9)*(Tf-32)
+		 Tf = (9/5)*Tc+32
+		 Tk = Tc+273.15
 
-	Equivalences of absolute temperatures.
+	Equivalence of absolute temperatures.
 		37C =   98.60 F
 		98F =   36.63 C
 		 0K = -273.15 C
 
-	Equivalences of relative temperature differences.
+	Equivalence of relative temperature differences.
 		45K =   25 C
 		25C =   45 K
 		25C =   25 K
@@ -176,7 +176,7 @@ absolutef()
 		else 	tot=f res=$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" )
 		fi
 	fi
-	printf '%s%s%s\n' "$res" "${HELPER-  }" "${HELPER-$tot}"
+	printf '%s%s%s\n' "$res" "${HELPER- º}" "${HELPER-$tot}"
 	
 }
 
@@ -208,7 +208,7 @@ relativef()
 	tvar=$(  HELPER= FROMT=k absolutef "$kdelta" )
 	tdelta=$(calcf "$tvar - ( $tzero )" )
 
-	printf '%s%s%s\n' "$tdelta" "${HELPER-  }" "${HELPER-$tot}"
+	printf '%s%s%s\n' "$tdelta" "${HELPER- º}" "${HELPER-$tot}"
 }
 
 
@@ -257,7 +257,7 @@ set -- "${@/,/.}" 	#change comma to dot
 [[ "$SCALE" ]] || SCALE="$SCALEDEF"
 
 #from-unit is always the first
-(( ${#UNITS} )) && FROMT="${UNITS:1:1}"
+(( ${#UNITS} )) && FROMT="${UNITS:0:1}"
 
 #to-unit is always the last
 (( ${#UNITS} > 1 )) && TOT="${UNITS:$#:1}"
