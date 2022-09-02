@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.5.3  sep/2022  by mountaineerbr
+# v0.5.4  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -243,13 +243,13 @@ done
 shift $(( OPTIND - 1 ))
 unset c
 
-#are there no arguments?
+#insufficient arguments?
 if ((${#@}==0)) && [[ -t 0 ]]
 then 	echo "$HELP" >&2
 	exit 1
+elif [[ "$*" != *[0-9]* && ! -t 0 ]]
+then	set -- $(</dev/stdin) "$@"
 fi
-
-[[ "$*" != *[0-9]* && ! -t 0 ]] && set -- $(</dev/stdin) "$@"
 
 typeset -l UNITS
 UNITS="$*" UNITS="${UNITS//[^a-z]}" UNITS="${UNITS//celsius/c}"
@@ -262,13 +262,13 @@ fi
 set -- "${@//[^0-9-]}" 	#remove units
 set -- "${@/,/.}" 	#change comma to dot
 
-[[ "$SCALE" ]] || SCALE="$SCALEDEF"
-
 #from-unit is always the first
 (( ${#UNITS} )) && FROMT="${UNITS:0:1}"
 
 #to-unit is always the last
-(( ${#UNITS} > 1 )) && TOT="${UNITS:$#-1:1}"
+(( ${#UNITS} > 1 )) && TOT="${UNITS:${#UNITS}-1:1}"
+
+[[ "$SCALE" ]] || SCALE="$SCALEDEF"
 
 #toggle
 TOGGLETTEMP="${TMPDIR:-/tmp}/$SN.$USER.togglet"
