@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.4.10  oct/2021  by mountaineerbr
+# v0.5  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -18,7 +18,8 @@ HELP="$SN - Convert amongst temperature units
 
 
 SYNOPSIS
-	$SN [-r] [-sNUM] TEMP [c|f|k] [c|f|k]
+	$SN [-NUM] [-qr] TEMP [c|f|k] [c|f|k]
+	$SN [-NUM] [-qr] TEMP [celsius|farenheit|kelvin] [celsius|farenheit|kelvin]
 
 
 	The default function is to convert amongst absolute temperatures.
@@ -34,7 +35,7 @@ SYNOPSIS
 	example, a change of 45 degrees Fahrenheit corresponds to a
 	change of 25 degrees Celsius. 
 
-	Option -s sets scale, NUM must be an integer; defaults=$SCALEDEF .
+	Option -NUM sets scale, NUM must be an integer; defaults=$SCALEDEF .
 
 	Temperature unit conversions are nonlinear; for example, temper-
 	ature conversions between Fahrenheit and Celsius scales cannot
@@ -94,211 +95,193 @@ USAGE EXAMPLES
 	$ $SN 10
 	$ $SN 10 c
 	$ $SN 10 f k
-	$ $SN -s4 10cf
+	$ $SN -4 10cf
 	$ $SN -r -- 10cf
 	$ $SN -- -273.15 C K
 
 
 OPTIONS
-	-r 	Convert relative temperatures.
-	-s NUM	Set scale; defaults=$SCALEDEF ."
+	-NUM	Set scale; defaults=$SCALEDEF.
+	-q 	Don't print unit in result.
+	-r 	Convert relative temperatures."
 
-
-#functions
-
-#convert amongst absolute temps
-absolutef()
-{
-	#don't calculate if $FROMT = $TOT
-	dontf "$*" || return
-
-	#from fahrenheit
-	if [[ "$FROMT" = f ]] || [[ -z "$FROMT" && "$*" != "$TOGGLET" ]]
-	then
-		#toggle
-		[[ -z "$FROMT" ]] && TOGGLET="$*"
-	
-		#to celsius
-		if [[ -z "${TOT/c}" ]]
-		then printf '%s  C\n' "$( calcf "( (${1}) - 32) * 5/9" )"
-		#to kelvin
-		else printf '%s  K\n' "$( calcf "( ( (${1}) - 32) * 5/9) + 273.15" )"
-		fi
-	#from celsius
-	elif [[ "$FROMT" = c ]]  || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
-	then
-		#toggle
-		[[ -z "$FROMT" ]] && unset TOGGLET
-	
-		#to fahrenheit
-		if [[ -z "${TOT/f}" ]]
-		then printf '%s  F\n' "$( calcf "( (${1}) * 9/5) + 32" )"
-		#to kelvin
-		else printf '%s  K\n' "$( calcf "(${1}) + 273.15/1" )"
-		fi
-	#from kelvin
-	else
-		#to celsius
-		if [[ -z "${TOT/c}" ]]
-		then printf '%s  C\n' "$( calcf "(${1}) - 273.15/1" )"
-		#to fahrenheit
-		else printf '%s  F\n' "$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" )"
-		fi
-	fi
-	
-}
-#helper, cut out unit
-_absolutef()
-{
-	local RES=( $( absolutef "$@" ) )
-	echo "${RES[0]}"
-}
-
-#calculator command
-calcf()
-{
-	bc -l <<<"scale=${SCALE}; $*"
-}
 
 #don't convert
 dontf()
 {
-	if [[ "${FROMT:-x}" = "$TOT" ]]
-	then
-		printf '%s  %s\n' "$*" "$TOT"
+	if [[ "${FROMT:-x}${HELPER+x}" = "$TOT" ]]
+	then 	printf '%s  %s\n' "$*" "$TOT"
 		return 2
 	fi
 	return 0
 }
 
+#calculator command
+calcf()
+{
+	bc <<-!
+	/* Round argument 'x' to 'd' digits */
+	define round(x, d) {
+		auto r, s
+		if(0 > x) {
+			return -round(-x, d)
+		}
+		r = x + 0.5*10^-d
+		s = scale
+		scale = d
+		r = r*10/10
+		scale = s  
+		return r
+	};
+	/* Serge3leo - https://stackoverflow.com/questions/26861118/rounding-numbers-with-bc-in-bash
+	 * MetroEast - https://askubuntu.com/questions/179898/how-to-round-decimals-using-bc-in-bash
+	 */
+	/* Truncate trailing zeroes */
+	define trunc(x){auto os;os=scale;for(scale=0;scale<=os;scale++)if(x==x/1){x/=1;scale=os;return x}}
+	/* http://phodd.net/gnu-bc/bcfaq.html
+	 */
+	scale=$SCALE+1; trunc( round($* , $SCALE) )
+	!
+}
+
+#convert amongst absolute temps
+absolutef()
+{
+	local res tot
+	typeset -u tot
+	tot="$TOT"
+	dontf "$*" || return
+
+	#from fahrenheit
+	if [[ "$FROMT" = f ]] || [[ -z "$FROMT" && "$*" != "$TOGGLET" ]]
+	then 	[[ -z "$FROMT" ]] && TOGGLET="$*"
+		#to celsius
+		if [[ -z "${TOT/c}" ]]
+		then 	res=$( calcf "( (${1}) - 32) * 5/9" )
+		#to kelvin
+		else 	res=$( calcf "( ( (${1}) - 32) * 5/9) + 273.15" ) tot=k
+		fi
+	#from celsius
+	elif [[ "$FROMT" = c ]]  || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
+	then 	[[ -z "$FROMT" ]] && unset TOGGLET
+		#to fahrenheit
+		if [[ -z "${TOT/f}" ]]
+		then 	res=$( calcf "( (${1}) * 9/5) + 32" )
+		#to kelvin
+		else 	res=$( calcf "(${1}) + 273.15/1" ) tot=k
+		fi
+	#from kelvin
+	else 	if [[ -z "${TOT/c}" ]]
+		then 	res=$( calcf "(${1}) - 273.15/1" )
+		#to fahrenheit
+		else 	res=$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" ) tot=f
+		fi
+	fi
+	printf '%s%s%s\n' "$res" "${HELPER-  }" "${HELPER-$tot}"
+	
+}
+
 #convert amongst relative temps
 relativef()
 {
-	#don't calculate if $FROMT = $TOT
+	local tot kzero kvar kdelta tzero tvar tdelta
+	typeset -l tot
+	tot="$TOT"
 	dontf "$*" || return
 
 	#from farenheit or kelvin
 	if [[ "$FROMT$TOT" = [fk] ]] || [[ -z "$FROMT" && "$*" != "$TOGGLET" ]]
-	then
-		#toggle
-		[[ -z "$FROMT" ]] && TOGGLET="$*"
-	
-		TOT=c
+	then 	[[ -z "$FROMT" ]] && TOGGLET="$*"
+		tot=c
 	#from celsius
 	elif [[ "$FROMT$TOT" = c ]] || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
-	then
-		#toggle
-		[[ -z "$FROMT" ]] && unset TOGGLET
-	
-		TOT=f
+	then 	[[ -z "$FROMT" ]] && unset TOGGLET
+		tot=f
 	fi
 	
 	#normalise temp unit for comparison in kelvin
-	KZERO="$( TOT=k _absolutef 0)"
-	KVAR="$( TOT=k _absolutef "$1")"
-	KDELTA="$( calcf "$KVAR - ( $KZERO )" )"
+	kzero=$( HELPER= TOT=k absolutef 0)
+	kvar=$(  HELPER= TOT=k absolutef "$1")
+	kdelta=$(calcf "$kvar - ( $kzero )" )
 
 	#transform kelvin delta in target temp delta
-	TZERO="$( FROMT=k _absolutef 0 )"
-	TVAR="$( FROMT=k _absolutef "$KDELTA" )"
-	TDELTA="$( calcf "$TVAR - ( $TZERO )" )"
+	tzero=$( HELPER= FROMT=k absolutef 0 )
+	tvar=$(  HELPER= FROMT=k absolutef "$kdelta" )
+	tdelta=$(calcf "$tvar - ( $tzero )" )
 
-	printf '%s  %s\n' "$TDELTA" "$TOT"
+	printf '%s%s%s\n' "$tdelta" "${HELPER-  }" "${HELPER-$tot}"
 }
 
 
+unset HELPER
 #parse opts
-while getopts hHs:S:dDrR c
-do
-	case $c in
+while getopts 1234567890hHrRq c
+do 	case $c in
+		[0-9])  #scale
+			SCALE="${c%%[.,]*}"
+			;;
 		[hH])
 			#help
 			echo "$HELP"
 			exit 
 			;;
-		[dDrR])
-			#relative temps
+		[qQ]) 	#quiet
+			HELPER=
+			;;
+		[rR]) #relative temps
 			OPTR=relative
 			;;
-		[sS]) 
-			#scale
-			SCALE="${OPTARG%%[.,]*}"
-			;;
-		?)
-			exit 1
+		?) 	exit 1
 			;;
 	esac
 done
 shift $(( OPTIND - 1 ))
 unset c
 
-#set all args to lowercase
-set -- "${@,,}"
-#change comma to dot
-set -- "${@/,/.}"
-
 #are there no arguments?
 if ((${#@}==0))
-then
-	#usage help
-	echo "$HELP" >&2
+then 	echo "$HELP" >&2
 	exit 1
-elif
-	#are there illegal temperature units?
-	ILLEGAL='abdeg-jl-z'
-	[[ "$*" = *[${ILLEGAL}]* ]]
-then
-	printf '%s: err: illegal units -- %s\n' "$SN" "${*//[^${ILLEGAL}]}" >&2
+fi
+
+typeset -l UNITS
+UNITS="${*//[^a-z]}" UNITS="${UNITS//celsius/c}"
+UNITS="${UNITS//farenheit/f}" UNITS="${UNITS//kelvin/k}"
+if ILLEGAL='abdeg-jl-z' ;[[ "$UNITS" = *[$ILLEGAL]* ]]
+then 	printf '%s: err: illegal unit -- %s\n' "$SN" "${UNITS//[^${ILLEGAL}]}" >&2
 	exit 2
 fi
 
-#set defaults if $SCALE contains letters
-if [[ "$SCALE" = *[a-zA-Z]* ]]
-then
-	printf '%s: err: option -s requires an integer -- %s\n' "$SN" "$SCALE" >&2
-	exit 1
-#set scale to defaults if not set by the user
-elif [[ -z "$SCALE" ]]
-then
-	SCALE="$SCALEDEF"
-fi
+set -- "${@//[^0-9-]}" 	#remove units
+set -- "${@/,/.}" 	#change comma to dot
 
-#units array
-UNITS=( $( grep -o '[a-z]' <<<"$*" ) )
-set -- "${@//[a-z]}"
+[[ "$SCALE" ]] || SCALE="$SCALEDEF"
 
 #from-unit is always the first
-(( ${#UNITS[@]} )) && FROMT="${UNITS[0]}"
+(( ${#UNITS} )) && FROMT="${UNITS:1:1}"
 
 #to-unit is always the last
-(( ${#UNITS[@]} > 1 )) && TOT="${UNITS[-1]}"
+(( ${#UNITS} > 1 )) && TOT="${UNITS:$#:1}"
 
-#temporary file for toggling temp convertion c <> f
-TOGGLETTEMP=$(mktemp)  TOGGLETTEMP="${TOGGLETTEMP%/*}/$SN.$USER.togglet"
-#load $TOGGLET
-[[ -z "$FROMT" && -r "$TOGGLETTEMP" ]] && TOGGLET="$( head -1 "$TOGGLETTEMP" )"
+#toggle
+TOGGLETTEMP="${TMPDIR:-/tmp}/$SN.$USER.togglet"
+[[ -z "$FROMT" && -e "$TOGGLETTEMP" ]] && read TOGGLET <"$TOGGLETTEMP"
 
-#select conversion type
+#conversion type
 if [[ -n "$OPTR" ]]
-then relativef "$@"
-else absolutef "$@"
+then 	relativef "$@"
+else 	absolutef "$@"
 fi
 code=$?
 
 #set toggle temp file?
 if [[ -n "$TOGGLET" ]]
-then
-	#make the toggle file
-	if ! echo "$TOGGLET" >"$TOGGLETTEMP"
-	then
-		printf '%s: err: cannot create tmp file -- %s\n' "$SN" "$TOGGLETTEMP" >&2
+then 	if ! echo "$TOGGLET" >"$TOGGLETTEMP"
+	then 	printf '%s: err: cannot create tmp file -- %s\n' "$SN" "$TOGGLETTEMP" >&2
 		exit 1
 	fi
 elif [[ -e "$TOGGLETTEMP" ]]
-then
-	#remove temp file
-	rm "$TOGGLETTEMP" || exit
+then 	rm -- "$TOGGLETTEMP" || exit
 fi
 
 exit ${code:-0}
-
