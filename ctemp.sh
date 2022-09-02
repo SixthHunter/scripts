@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.5  sep/2022  by mountaineerbr
+# v0.5.1  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -149,7 +149,6 @@ absolutef()
 {
 	local res tot
 	typeset -u tot
-	tot="$TOT"
 	dontf "$*" || return
 
 	#from fahrenheit
@@ -157,24 +156,24 @@ absolutef()
 	then 	[[ -z "$FROMT" ]] && TOGGLET="$*"
 		#to celsius
 		if [[ -z "${TOT/c}" ]]
-		then 	res=$( calcf "( (${1}) - 32) * 5/9" )
+		then 	tot=c res=$( calcf "( (${1}) - 32) * 5/9" )
 		#to kelvin
-		else 	res=$( calcf "( ( (${1}) - 32) * 5/9) + 273.15" ) tot=k
+		else 	tot=k res=$( calcf "( ( (${1}) - 32) * 5/9) + 273.15" )
 		fi
 	#from celsius
 	elif [[ "$FROMT" = c ]]  || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
 	then 	[[ -z "$FROMT" ]] && unset TOGGLET
 		#to fahrenheit
 		if [[ -z "${TOT/f}" ]]
-		then 	res=$( calcf "( (${1}) * 9/5) + 32" )
+		then 	tot=f res=$( calcf "( (${1}) * 9/5) + 32" )
 		#to kelvin
-		else 	res=$( calcf "(${1}) + 273.15/1" ) tot=k
+		else 	tot=k res=$( calcf "(${1}) + 273.15/1" )
 		fi
 	#from kelvin
 	else 	if [[ -z "${TOT/c}" ]]
-		then 	res=$( calcf "(${1}) - 273.15/1" )
+		then 	tot=c res=$( calcf "(${1}) - 273.15/1" )
 		#to fahrenheit
-		else 	res=$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" ) tot=f
+		else 	tot=f res=$( calcf "( ( (${1}) - 273.15) * 9/5) + 32" )
 		fi
 	fi
 	printf '%s%s%s\n' "$res" "${HELPER-  }" "${HELPER-$tot}"
