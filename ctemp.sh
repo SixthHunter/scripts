@@ -1,6 +1,6 @@
 #!/bin/bash
 # Convert amongst temperature units
-# v0.5.4  sep/2022  by mountaineerbr
+# v0.5.5  sep/2022  by mountaineerbr
 
 #defaults
 
@@ -111,10 +111,12 @@ OPTIONS
 
 
 #don't convert
-dontf()
+isSameUnitf()
 {
+	local degsign
 	if [[ "${FROMT:-x}${HELPER+x}" = "$TOT" ]]
-	then 	printf '%s  %s\n' "$*" "$TOT"
+	then 	[[ $TOT = [kK] ]] || degsign=º
+		printf '%s%s%s\n' "$*" "${HELPER-$'\t'$degsign}" "${HELPER-$TOT}"
 		return 2
 	fi
 	return 0
@@ -153,7 +155,6 @@ absolutef()
 {
 	local tot degsign res
 	typeset -u tot
-	dontf "$*" || return
 
 	#from fahrenheit
 	if [[ "$FROMT" = f ]] || [[ -z "$FROMT" && "$*" != "$TOGGLET" ]]
@@ -166,7 +167,7 @@ absolutef()
 		fi
 	#from celsius
 	elif [[ "$FROMT" = c ]]  || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
-	then 	[[ -z "$FROMT" ]] && unset TOGGLET
+	then 	[[ -z "$FROMT" ]] && TOGGLET=
 		#to fahrenheit
 		if [[ -z "${TOT/f}" ]]
 		then 	tot=f res=$( calcf "( (${1}) * 9/5) + 32" )
@@ -188,33 +189,30 @@ absolutef()
 #convert amongst relative temps
 relativef()
 {
-	local tot degsign kzero kvar kdelta tzero tvar tdelta
-	typeset -l tot
-	tot="$TOT"
-	dontf "$*" || return
+	local degsign kzero kvar kdelta tzero tvar tdelta
 
 	#from farenheit or kelvin
 	if [[ "$FROMT$TOT" = [fk] ]] || [[ -z "$FROMT" && "$*" != "$TOGGLET" ]]
-	then 	[[ -z "$FROMT" ]] && TOGGLET="$*"
-		tot=c
+	then 	[[ -z "$FROMT" ]] && FROMT=f TOGGLET="$*" 
+		TOT=c
 	#from celsius
 	elif [[ "$FROMT$TOT" = c ]] || [[ -z "$FROMT" && "$*" = "$TOGGLET" ]]
-	then 	[[ -z "$FROMT" ]] && unset TOGGLET
-		tot=f
+	then 	[[ -z "$FROMT" ]] && FROMT=c TOGGLET=
+		TOT=f
 	fi
 	
 	#normalise temp unit for comparison in kelvin
-	kzero=$( HELPER= TOT=k absolutef 0)
-	kvar=$(  HELPER= TOT=k absolutef "$1")
+	kzero=$( HELPER= TOGGLET= TOT=k absolutef 0)
+	kvar=$(  HELPER= TOGGLET= TOT=k absolutef "$1")
 	kdelta=$(calcf "$kvar - ( $kzero )" )
 
 	#transform kelvin delta in target temp delta
-	tzero=$( HELPER= FROMT=k absolutef 0 )
-	tvar=$(  HELPER= FROMT=k absolutef "$kdelta" )
+	tzero=$( HELPER= TOGGLET= FROMT=k absolutef 0 )
+	tvar=$(  HELPER= TOGGLET= FROMT=k absolutef "$kdelta" )
 	tdelta=$(calcf "$tvar - ( $tzero )" )
 
-	[[ $tot = [kK] ]] || degsign=º
-	printf '%s%s%s\n' "$tdelta" "${HELPER-$'\t'$degsign}" "${HELPER-$tot}"
+	[[ $TOT = [kK] ]] || degsign=º
+	printf '%s%s%s\n' "$tdelta" "${HELPER-$'\t'$degsign}" "${HELPER-$TOT}"
 }
 
 
@@ -275,6 +273,7 @@ TOGGLETTEMP="${TMPDIR:-/tmp}/$SN.$USER.togglet"
 [[ -z "$FROMT" && -e "$TOGGLETTEMP" ]] && read TOGGLET <"$TOGGLETTEMP"
 
 #conversion type
+isSameUnitf "$*" || exit
 if [[ -n "$OPTR" ]]
 then 	relativef "$@"
 else 	absolutef "$@"
