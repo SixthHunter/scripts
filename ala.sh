@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.16.1  sep/2022  by castaway
+# v0.16.3  sep/2022  by castaway
 
 #defaults
 #script name
@@ -365,8 +365,8 @@ cachef()
 {
 	local opt url fname fpath ret
 	opt=$1 url="${@: -1}"
-	fname="${url/https:\/\/archive.archlinux.org\/}".cache
-	fname="${fname//[\/:]/.}" fname="${fname//../.}" fname="${fname//../.}"
+	fname="${url/https:\/\/archive.archlinux.org\/}.cache" fname="${fname/https:}" fname="${fname/http:}"
+	fname="${fname//[\/:]/.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname#.}"
 	fpath="$CACHEDIR/$fname"
 
 	case $opt in
@@ -375,7 +375,8 @@ cachef()
 	3) app=("${YOURAPP3[@]}") ;;
 	esac
 	
-	if [[ ! -s "$fpath" || "$OPTL" -gt 0 || $(find "$fpath" -mtime +1) ]]
+	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]] \
+		|| [[ "${fname##*/}" != *repos\.20[0-9][0-9]\.* && $(find "$fpath" -mtime +2) ]]
 	then
 		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
 		"${app[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
