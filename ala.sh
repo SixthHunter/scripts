@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.15.12  may/2022  by castaway
+# v0.15.13  sep/2022  by castaway
 
 #defaults
 #script name
@@ -670,11 +670,9 @@ calcf() {
 			printf 'wait\r' >&2
 
 			#get repo list
-			SIZES=( $( {
-				cachef 3 "$URLADD/$i/os/x86_64/${i}.db.tar.gz" |
-					tar --extract --wildcards -Ozf - '*/desc' |
-					sed -n '/%CSIZE%/{n;p}'
-			} 2>/dev/null ) )
+			SIZES=( $( cachef 3 "$URLADD/$i/os/x86_64/${i}.db.tar.gz" |
+					tar --extract --wildcards -Ozf - '*/desc' 2>/dev/null |
+					sed -n '/%CSIZE%/{n;p}' ) )
 			#bsdtar -xf - -O '*/desc'
 			
 			#sum sizes
@@ -786,7 +784,7 @@ infodumpf() {
 		
 			#get database and extract
 			cachef 2 -o - "$URLADD" |
-				tar --extract --wildcards -Ozf - "${TGLOB[@]}" |
+				tar --extract --wildcards -Ozf - "${TGLOB[@]}" 2>/dev/null |
 				sed 's/^%FILENAME%$/--------\n\n&/' |
 				tac
 				#bsdtar -xf - -O "${TGLOB[@]}"
