@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.15.13  sep/2022  by castaway
+# v0.16.1  sep/2022  by castaway
 
 #defaults
 #script name
@@ -77,11 +77,11 @@ HELP="NAME
 
 
 SYNOPSIS
-	$SN  [-2p]        ['.'|'/'|a-z|PKGNAME|URLPATH]
-	$SN  [-2d]        [DATE] [REPO] [[i686|x86_64] '..']
+	$SN  [-2p]        [.|/|a-z|PKGNAME|URLPATH]
+	$SN  [-2d]        [DATE] [REPO] [x86_64|i686] [..]
 	$SN  [-2d] [-cc]  [DATE] [REPOS]
 	$SN  [-2d] -i     [DATE|URLPATH]
-	$SN  [-2d] [-kK]  [PKGNAME|'*'|'.'] [DATE] [REPOS] [i686|x86_64]
+	$SN  [-2d] [-kK]  [DATE] [REPOS] [x86_64|i686] [PKGNAME|*|.] 
 	$SN  [-2d] -u     [DATES]
 	$SN  -nn          [NUM]
 	$SN  -hov
@@ -155,12 +155,12 @@ DESCRIPTION
 	from repo.db.tar.gz files of repos instead from repo html pages.
 
 	Option -k dumps package information of a repo database .db file
-	from a given DATE or special repo.  This option requires a pack-
-	age name as argument. The option argument will be matched by all
-	pkg names starting with that string. Set -k\* or -k. to dump
-	information of all pkgs.  A DATE or REPO as positional argument
-	is optional. Set -K to dump information of files created by the
-	package as well. See usage example (6) and (7).
+	from a given DATE or special repo.  PACKAGENAME must be last po-
+	sitional argument and will be matched by all pkg names starting
+	with that string. Set \`\*' or \`.' to dump information of all pkgs.
+	DATE and REPOS as positional arguments are optional. Set -K to
+	dump information of files created by the package as well. See
+	usage example (6) and (7).
 	
 	Option -i will list all ISO repos if no argument is given. DATE
 	format used in the ISO repos is normally YYY.MM.DD but older ISO
@@ -273,27 +273,28 @@ USAGE EXAMPLES
 	(5) Detailed information of package grep at the week special
 	    repository. Set the \`core' repo or defaults to ${AUTOREPOS[*]} .
 
-		$ $SN -k grep week
-		$ $SN -k grep week core
+		$ $SN -k week  grep
+		$ $SN -k week core  grep
+		$ $SN week core ..  grep
 
 
 		Dump information of all packages starting with firefox
 		in extra and community repos of $DEFALADATE:
 
-		$ $SN -k firefox community extra
-		$ $SN -k 'firefox-[0-9]' extra
+		$ $SN -k community extra  firefox
+		$ $SN -k extra  'firefox-[0-9]'
 
 
 	(6) Get detailed information of all packages of a REPO (core)
 	    from an old DATE (extracts data from core.db):
 
-		$ $SN -k. 20160601/core x86_64
+		$ $SN -k 20160601/core x86_64  .
 
 
 		Tip: set -K to dump more info of packages:
 
-		$ $SN -K. 20140601/core
-		$ $SN -2k. yesterday extra
+		$ $SN -K 20140601/core  .
+		$ $SN -2k yesterday extra  .
 
 
 	(7) Download an entire repository from given DATE or from a
@@ -348,11 +349,9 @@ OPTIONS
 	-cc [DATE] [REPOS]
 		   Same as -c but file sizes are from db.tar.gz.
 	-i  DATE   Use the ISO archives.
-	-k  PKGNAME [DATE] [REPOS] [i686|x86_64]
+	-kK [DATE] [REPOS] [i686|x86_64] PKGNAME
 		   Dump information of packages; defaults DATE=$DEFALADATE ,
-		   REPOS=( ${AUTOREPOS[*]} ).
-	-K  PKGNAME [DATE] [REPOS] [i686|x86_64]
-		   Same as -k but dumps more info.
+		   REPOS=( ${AUTOREPOS[*]} ); -K dumps m ore info.
 	-u, -s [DATES] 
 		   Print update and sync times of a DATE repo."
 
@@ -377,7 +376,10 @@ cachef()
 	esac
 	
 	if [[ ! -s "$fpath" || "$OPTL" -gt 0 || $(find "$fpath" -mtime +1) ]]
-	then 	"${app[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
+	then
+		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
+		"${app[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
+		trap \  INT TERM
 		grep --color=always -qi -e '404 Not Found' "$fpath" && {
 			rm -- "$fpath" 2>/dev/null ;ret=1
 		}
@@ -550,8 +552,7 @@ checkdatef() {
 	#is $unix set and is that positive value?
 	if (( unix ))
 	then
-		if 
-			#out-of-range?
+		if  	#out-of-range?
 			unixmin=1072922400
 			unixmax=$( date --date=1day +%s )
 			(( unix < unixmin )) ||
@@ -559,8 +560,7 @@ checkdatef() {
 		then
 			printf '%s: err -- DATE out of range\n' "$SN" >&2
 			exit 1
-		elif
-			#convert back from unix time in the right format
+		elif 	#convert back from unix time in the right format
 			(( ISOOPT )) && sepout=. || sepout=/
 			datestr=$(date -d@"$unix" +%Y${sepout}%m${sepout}%d) &&
 			[[ -n "$datestr" ]]
@@ -693,51 +693,43 @@ calcf() {
 }
 
 #-k: pkg dump
-#$INFOOPTARG will come with a pkg name or a star *
+#$PKGNAME will come with a pkg name or a star *
 infodumpf() {
-	local arg date COMPLETE LASTARG LASTARGX REPOS TGLOB PIPES CURL TAR URLADD
+	local arg date out skip matchestotal matches POS COMPLETE LASTARG LASTARGX REPOS TGLOB PIPES CURL TAR URLADD
 
-
-	#check for pkg tar or bsdtar
-	if ! command -v tar &>/dev/null
-	then 	printf '%s: err -- pkg tar is required\n' "$SN" >&2 ;return 1
-	fi
-	
 	#remove autocomplete operator
-	if [[ "$*" = *..* ]]
-	then 	set -- "${@//../ }"
-	fi
+	[[ "${@:$#}" = .. ]] && set -- "${@:1:$#-1}" '*'
 
+	if lastarghelperf "${@:$#}"  #last arg must be pkg name
+	then 	PKGNAME="${@:$#}" ; set -- "${@:1:$#-1}"
+	fi
 	#is calling repos directly?
-	if [[ "$INFOOPTARG" =~ ^/?($VALIDREPOS) ]]
+	if [[ "$PKGNAME" =~ ^/?($VALIDREPOS) ]]
 	then
 		#is $OPT3 set (experimental)?
 		if [[ "$OPT3" ]]
-		then 	set -- "$@" "$INFOOPTARG"
-		else 	set -- "$DEFALADATE" "$INFOOPTARG" "$@"
+		then 	set -- "$@" "$PKGNAME"
+		else 	set -- "$DEFALADATE" "$PKGNAME" "$@"
 		fi
-		INFOOPTARG='*'
+		PKGNAME='*'
 	fi
 
-	#change glob '.' to '*'
-	[[ "$INFOOPTARG" = . ]] && INFOOPTARG='*'
+	[[ "$PKGNAME" = . ]] && PKGNAME='*'
+	PKGNAME="${PKGNAME#.}" PKGNAME="${PKGNAME#.}"
 
-	#test if there is any user repo name input
-	#is calling REPOS directly? forgot DATE info?
-	if [[ -z "${1// }" || "$1" =~ ^/?($VALIDREPOS) ]]
-	then 	set -- "$DEFALADATE" "$@"
-	fi
+	#test if there is any repo name in input. is calling REPOS directly? forgot DATE info?
+	[[ -z "${1//[ .]}" || "$1" =~ ^/?($VALIDREPOS) ]] && set -- "$DEFALADATE" "$@"
 	
 	#remove all /
 	set --  ${@//\// }
 	#get last args
-	pos=1
+	POS=1
 	for arg in "${@:2}"
-	do 	lastarghelperf || continue
+	do 	lastarghelperf "$arg" || continue
 		#get repo and downwards path
-		LASTARGX=( "${@:$pos}" )
-		#remove positional args from $pos onwards
-		set -- "${@:1:$((pos-1))}"
+		LASTARGX=( "${@:$POS}" )
+		#remove positional args from $POS onwards
+		set -- "${@:1:POS-1}"
 		break
 	done
 
@@ -772,48 +764,61 @@ infodumpf() {
 	for REPO in "${REPOS[@]}"; do
 		{
 			#consolidate path
+			[[ "$PKGNAME" =~ -[0-9]+-(x86_64|i686).pkg$ ]] && PKGNAME="${PKGNAME%${BASH_REMATCH[0]}}"
 			if ((INFOOPT==1))
 			then 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.db.tar.gz"
-				TGLOB=( "${INFOOPTARG}*/desc" )
+				TGLOB=( "${PKGNAME}*/desc" )
 			else 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.files.tar.gz"
-				TGLOB=( "${INFOOPTARG}*/files" "${INFOOPTARG}*/desc" )
+				TGLOB=( "${PKGNAME}*/files" "${PKGNAME}*/desc" )
 			fi
 
 			#consolidate path
 			URLADD=$(consolidatepf "$URLADD")
 		
 			#get database and extract
-			cachef 2 -o - "$URLADD" |
-				tar --extract --wildcards -Ozf - "${TGLOB[@]}" 2>/dev/null |
-				sed 's/^%FILENAME%$/--------\n\n&/' |
-				tac
+			fun() { cachef 2 -o - "$URLADD" |
+				tar --extract --wildcards -Ozf - "$@" 2>/dev/null |
+				sed 's/^%FILENAME%$/--------\n\n&/' | tac
 				#bsdtar -xf - -O "${TGLOB[@]}"
+			}
+			if out=$(fun "${TGLOB[@]}") ;[[ "$out" ]]
+			then 	echo "$out" ;skip=1
+			#try similar globs
+			elif ((!skip)) && [[ "${TGLOB[0]/%-[0-9]*.*/\*\/desc}" != "${TGLOB[0]}" ]]
+			then 	if ((INFOOPT==1))
+				then 	TGLOB=("${TGLOB[@]/%-[0-9]*.*/\*\/desc}")
+				else 	TGLOB=("${TGLOB[0]/%-[0-9]*.*/\*\/files}" "${TGLOB[1]/%-[0-9]*.*/\*\/desc}")
+				fi
+				out=$(fun "${TGLOB[@]}" 2>/dev/null) ;echo "$out"
+			fi
 		
 			#errors
 			PIPES=( "${PIPESTATUS[@]}" )
-			CURL="${PIPES[0]}"
-			TAR="${PIPES[1]}"
+			CURL="${PIPES[0]}"  TAR="${PIPES[1]}"
 			if (( TAR > 0 || CURL > 0 )) && ((TAR-130))
 			then 	echo "$SN: info -- not found at <$URLADD>" >&2
-			else 	echo
-				echo "query___: $INFOOPTARG"
+			else 	matches=$(grep -c '^%FILENAME%' <<<"$out") ;((matchestotal+=matches))
+				echo
+				echo "query___: ${TGLOB[0]%\*/*}    matches: $matches"
 				echo "database: <$URLADD>"
 				#echo "repo: $date/$repo"
 			fi
-		} &
+		} &  #disable forking to use $skip
 	done
 
 	#wait for subprocesses
 	wait
+	((matchestotal)) && echo "matches total: $matchestotal"  #only works if no forking
+	return 0
 }
 #option '-o -' will not affect wget in a bad fashion for this
 
 #get last args, helper func
 lastarghelperf() {
-
-	(( ++pos ))
+	local arg
+	(( ++POS ))
 	[[ -n "$LAST" ]] && (( ++LAST ))
-	arg="${arg,,}"
+	arg="${*,,}"
 	arg="${arg//[,:-]}"
 	{
 		[[ "$arg" =~ ^[0-9/]+
@@ -827,7 +832,7 @@ lastarghelperf() {
 		|| "$arg" =~ ^($WEEKDAYS)\ ?,?$
 		|| "$arg" =~ ^($TIMEUNITS)$ ]]
 	} && return 1
-	(( LAST - 2 )) || (( --pos ))
+	(( LAST - 2 )) || (( --POS ))
 	return 0
 }
 #process html page helper
@@ -856,7 +861,7 @@ pagepf() {
 }
 #- search pkg (default opt)
 searchf() {
-	local arg date pos URLADD COMPLETE LAST LASTARG LASTARGX LIST
+	local arg date POS URLADD COMPLETE LAST LASTARG LASTARGX LIST
 
 	# '..' operator to autocomplete downwards path?
 	if [[ "$*" = *..* ]]
@@ -871,15 +876,15 @@ searchf() {
 	[[ "$1" != / ]] && set --  ${@//\// }
 
 	#get last args
-	pos=1
+	POS=1
 	for arg in "${@:2}"
-	do 	lastarghelperf || continue
+	do 	lastarghelperf "$arg" || continue
 		#get repo and downwards path
-		LASTARGX=( "${@:$pos}" )
+		LASTARGX=( "${@:$POS}" )
 		LASTARG="${LASTARGX[*]}"
 		LASTARG="${LASTARG// /\/}"
-		#remove positional args from $pos onwards
-		set -- "${@:1:$((pos-1))}"
+		#remove positional args from $POS onwards
+		set -- "${@:1:POS-1}"
 		break
 	done
 
@@ -1170,7 +1175,7 @@ userrepof() {
 
 
 #parse options
-while getopts :23acdhik:K:lnopsuv opt
+while getopts :23acdhikKlnopsuv opt
 do
 	case $opt in
 		3) #user a mirror server, *not* and archieval server
@@ -1200,11 +1205,9 @@ do
 			;;
 		k) #pkg detailed info, also see ':'
 			INFOOPT=1
-			INFOOPTARG="${OPTARG:-\*}"
 			;;
 		K) #pkg more detailed info, also see ':'
 			INFOOPT=2
-			INFOOPTARG="${OPTARG:-\*}"
 			;;
 		l) #update local cache data
 			OPTL=1
@@ -1224,11 +1227,6 @@ do
 		v) #version of Script
 			grep -m1 '# v' "$0"
 			exit
-			;;
-		:) #pkg detailed info
-			#probably forgot ARG to opt -K
-			[[ "${@:$((OPTIND-1)):1}" = -K ]] && INFOOPT=2 || INFOOPT=1
-			INFOOPTARG='*'
 			;;
 		\?)
 			printf '%s: invalid option -- -%s\n' "$SN" "$OPTARG" >&2
@@ -1276,7 +1274,8 @@ fi
 
 #default repo/date?
 #user set environment variable $ALADATE ?
-[[ -n $ALADATE ]] && DEFALADATE=$ALADATE
+[[ "$ALADATE" ]] && DEFALADATE="$ALADATE"
+[[ "${1,,}" = @(lastly|weekly|monthly) ]] && set -- "${1%[lL][yY]}" "${@:2}"
 
 #call opt functions
 #news feed
@@ -1303,11 +1302,13 @@ then
 	fi
 #-k dump pkg info only
 #also automatically set if last arg matches .db
-elif ((INFOOPT))
+elif ((INFOOPT)) \
+	|| [[ "${@:$#}" = [.*] ]] \
+	|| [[ "${@:$#}" = .* && "${@:$#}" != .. ]] \
+	|| [[ "${@:$#-1:1}" = . ]] || [[ "${@:$#-1:1}" = .. ]]
 then 	infodumpf "$@"
 #default opt
 else
-	#parse operator 
 	[[ "$*" = .. ]] && set -- "$DEFALADATE" "$@"
 	
 	#set args for opt functions
