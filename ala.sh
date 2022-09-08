@@ -81,7 +81,7 @@ SYNOPSIS
 	$SN  [-2d]        [DATE] [REPO] [x86_64|i686] [..]
 	$SN  [-2d] [-cc]  [DATE] [REPOS]
 	$SN  [-2d] -i     [DATE|URLPATH]
-	$SN  [-2d] [-kK]  [DATE] [REPOS] [x86_64|i686] [PKGNAME|*|.] 
+	$SN  [-2d] [-kK]  [DATE] [REPOS] [x86_64|i686] [.|*|PKGNAME] 
 	$SN  [-2d] -u     [DATES]
 	$SN  -nn          [NUM]
 	$SN  -hov
