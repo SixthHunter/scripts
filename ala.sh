@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.16.4  sep/2022  by castaway
+# v0.16.5  sep/2022  by castaway
 
 #defaults
 #script name
@@ -11,46 +11,40 @@ DEFALADATE=last
 
 #calculate size of the following repos
 DEFCALCREPOS=( core extra community multilib )
-#CALCREPOS=( community community-staging community-testing core extra gnome-unstable kde-unstable multilib multilib-staging multilib-testing staging testing )
 
-##default ala server
-#official ala archieve
+## default ala server
 URL=https://archive.archlinux.org
-## Archive mirrors
+## archive mirrors
 ## https://{europe,asia,america}.archive.pkgbuild.com
 #URL=https://america.archive.pkgbuild.com
 
-## Misc servers (experimental)
-## Repo date from 07/2017; also has fewer packages
-##http://archive.virtapi.org
+## misc servers (experimental)
+## repo date from 07/2017; also has fewer packages
+## http://archive.virtapi.org
 ## Chinese archive URL (only for some pkgs):
-##https://repo.archlinuxcn.org/x86_64
-##historical repo? hosted by ftp.nluug.nl:
-##http://ftp.vim.org/ftp/os/Linux/distr/archlinux
-##historical archive for very old arch isos:
-##http://skyward.fr/mirror/archlinux/archive/iso
+## https://repo.archlinuxcn.org/x86_64
+## historical repo? hosted by ftp.nluug.nl:
+## http://ftp.vim.org/ftp/os/Linux/distr/archlinux
+## historical archive for very old arch isos:
+## http://skyward.fr/mirror/archlinux/archive/iso
 
-##arkena archieve servers -- option -2
-#good alternative archive url but often is down for short while:
+## arkena archieve servers -- option -2
+## good alternative archive url but often is down for short while:
 BURL=http://archlinux.arkena.net/archive
 
-#mirror server, this is not an archival server -- option -3
+# mirror server, option -3
 MURLDEF=http://archlinux.c3sl.ufpr.br
 #MURLDEF=http://ftp.gwdg.de/pub/linux/archlinux/
 
 #define url complements
 URL=${URL%/}  BURL=${BURL%/}  MURL="${MURL:-$MURLDEF}" MURL=${MURL%/}
-URL1=$URL/packages
-URL2=$URL/repos
-URL3=$URL/iso
+URL1=$URL/packages  URL2=$URL/repos  URL3=$URL/iso
 
 #cache directory
 #defaults=/tmp/ala.sh.cache
 CACHEDIR="${TMPDIR:-/tmp}/$SN".tmp
 
-#do not change the following
-#LC_NUMERIC=en_US.UTF-8
-LC_NUMERIC=C
+#more defaults
 AUTOREPOS=( core extra community )
 VALIDREPOS='pool|sources|community|community-staging|community-testing|core|extra|gnome-unstable|kde-unstable|multilib|multilib-staging|multilib-testing|staging|testing'
 MONTHSF='january|february|march|april|may|june|july|august|september|october|november|december'
@@ -59,13 +53,14 @@ MONTHSN='fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth'
 WEEKDAYSF='sunday|monday|tuesday|wednesday|thursday|friday|saturday'
 WEEKDAYS='sun|mon|tues?|wed|wednes|thur?s?|fri|sat'
 TIMEUNITS='hours?|days?|weeks?|months?|years?|ago|next|hence|this|first' #last
+#LC_NUMERIC=en_US.UTF-8
+LC_NUMERIC=C
 export LC_NUMERIC
 
 #sed html filtering
 WBROWSERDEF=(sed -e 's/<[^>]*>//g' -e 's/\&gt;/>/g ;s/\&lt;/</g ;s/&nbsp;/ /g' -e 's/\r//g')
 
-#user agent
-#chrome on windows 10
+#user agent (chrome on windows 10)
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
 
 #script name
@@ -208,9 +203,10 @@ MISCELLANEOUS
 		Server = https://archive.archlinux.org/repos/2020/07/02/\$repo/os/\$arch
 	
 
-	To download an entire snapshot repo with wget, see usage example (8).
-	Alternatively, check package powerpill from AUR. For a python script
-	to download packages from ALA, check agetpkg from AUR.
+	To download an entire snapshot repo with wget, see usage example
+	(8). Alternatively, check package \`powerpill' from AUR. For a
+	python script to download packages from ALA, check \`agetpkg'.
+	And check \`pacseek' for cli interface.
 	
 	More information about ALA at
 	<wiki.archlinux.org/index.php/Arch_Linux_Archive>.
@@ -286,15 +282,16 @@ USAGE EXAMPLES
 
 
 	(6) Get detailed information of all packages of a REPO (core)
-	    from an old DATE (extracts data from core.db):
+	    from an old DATE or information about a package (iw):
 
-		$ $SN -k 20160601/core x86_64  .
+		$ $SN -k 2016 06 01/core x86_64  .
+		$ $SN 20160601/core x86_64  . iw
 
 
 		Tip: set -K to dump more info of packages:
 
-		$ $SN -K 20140601/core  .
-		$ $SN -2k yesterday extra  .
+		$ $SN -K 2014 06 01/core  .
+		$ $SN -3 -k yesterday core  .
 
 
 	(7) Download an entire repository from given DATE or from a
@@ -358,6 +355,7 @@ OPTIONS
 #pkgs with similar fuctionalities, however they are not ala explorers:
 #ref: powerpill: https://bbs.archlinux.org/viewtopic.php?id=110136
 #ref: agetpkg: https://github.com/seblu/agetpkg
+#ref: pacseek: https://github.com/moson-mo/pacseek
 
 #cache files
 #wrapper around curl/wget commands
@@ -370,9 +368,9 @@ cachef()
 	fpath="$CACHEDIR/$fname"
 
 	case $opt in
-	0) app=("${YOURAPP[@]}") ;;
-	2) app=("${YOURAPP2[@]}") ;;
-	3) app=("${YOURAPP3[@]}") ;;
+		0) app=("${YOURAPP[@]}") ;;
+		2) app=("${YOURAPP2[@]}") ;;
+		3) app=("${YOURAPP3[@]}") ;;
 	esac
 	
 	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]] \
@@ -398,12 +396,12 @@ consolidatepf()
 	local p="$1" p_test=
 
 	#remove extra blank spaces
-	while 	p_test="$p"
+	while p_test="$p"
 		p="${p//\/.\//\/}" 	#replace /./ with /
 		p="${p//\/\//\/}" 	#replace // with /
 		p="${p//  / }" 		#remove extra spaces
 		[[ "$p_test" != "$p" ]]
-	do :
+	do 	:
 	done
 
 	#re-add a first double slash if url contains any of the following
@@ -412,7 +410,6 @@ consolidatepf()
 
 	#replace spaces with slash
 	p="${p// /\/}"
-
 	echo "$p"
 }
 
@@ -620,8 +617,7 @@ calcf() {
 	if ((COPT==1))
 	then
 		#header
-		printf '%s\n' 'Arch Linux Archive'
-		printf '<%s>\n' "$URLADD"
+		printf '%s\n''<%s>\n' 'Arch Linux Archive' "$URLADD"
 		
 		#calc sizes of repos
 		for i in "${CALCREPOS[@]}"
@@ -663,9 +659,10 @@ calcf() {
 	#db.tar.gz files from each repo
 	else
 		#header
-		printf '%s\n' 'Arch Linux Archive'
-		printf '%s\n' 'Sigs are ignored'
-		printf '<%s/*/repo.db.tar.gz>\n' "$URLADD"
+		printf '%s\n''%s\n''<%s/*/repo.db.tar.gz>\n' \
+			'Arch Linux Archive' \
+			'Sigs are ignored' \
+			"$URLADD"
 
 		for i in "${CALCREPOS[@]}"; do
 			printf 'wait\r' >&2
@@ -760,16 +757,14 @@ infodumpf() {
 	#asynchronous loop
 	for REPO in "${REPOS[@]}"; do
 		{
-			#consolidate path
 			[[ "$PKGNAME" =~ -[0-9]+-(x86_64|i686).pkg$ ]] && PKGNAME="${PKGNAME%${BASH_REMATCH[0]}}"
-			if ((INFOOPT==1))
-			then 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.db.tar.gz"
-				TGLOB=( "${PKGNAME}*/desc" )
-			else 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.files.tar.gz"
+			if ((INFOOPT>1))
+			then 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.files.tar.gz"
 				TGLOB=( "${PKGNAME}*/files" "${PKGNAME}*/desc" )
+			else 	URLADD="$URL2/$*/$REPO/$COMPLETE/${REPO}.db.tar.gz"
+				TGLOB=( "${PKGNAME}*/desc" )
 			fi
 
-			#consolidate path
 			URLADD=$(consolidatepf "$URLADD")
 		
 			#get database and extract
@@ -782,9 +777,9 @@ infodumpf() {
 			then 	echo "$out" ;skip=1
 			#try similar globs
 			elif ((!skip)) && [[ "${TGLOB[0]/%-[0-9]*.*/\*\/desc}" != "${TGLOB[0]}" ]]
-			then 	if ((INFOOPT==1))
-				then 	TGLOB=("${TGLOB[@]/%-[0-9]*.*/\*\/desc}")
-				else 	TGLOB=("${TGLOB[0]/%-[0-9]*.*/\*\/files}" "${TGLOB[1]/%-[0-9]*.*/\*\/desc}")
+			then 	if ((INFOOPT>1))
+				then 	TGLOB=("${TGLOB[0]/%-[0-9]*.*/\*\/files}" "${TGLOB[1]/%-[0-9]*.*/\*\/desc}")
+				else 	TGLOB=("${TGLOB[@]/%-[0-9]*.*/\*\/desc}")
 				fi
 				out=$(fun "${TGLOB[@]}" 2>/dev/null) ;echo "$out"
 			fi
@@ -803,7 +798,6 @@ infodumpf() {
 		} &  #disable forking to use $skip
 	done
 
-	#wait for subprocesses
 	wait
 	((matchestotal)) && echo "matches total: $matchestotal"  #only works if no forking
 	return 0
@@ -903,12 +897,10 @@ searchf() {
 			elif [[ "$LASTARG" = *x86_64* ]]; then
 				LASTARG="${LASTARG/x86_64}"
 				COMPLETE=$COMPLETE/x86_64
-			else
-				#no i686 arch after 2017/11/15
+			else 	#no i686 arch after 2017/11/15
 				if [[ "$*" = @(last|week|month) || "${*//[^0-9]}" > 20171114 || "$OPT3" ]]; then
 					COMPLETE=$COMPLETE/x86_64/
-				else
-					COMPLETE=$COMPLETE/
+				else 	COMPLETE=$COMPLETE/
 				fi
 			fi
 	
@@ -916,7 +908,6 @@ searchf() {
 			if [[ "$LASTARG" = @(pool|sources) ]] && 
 				[[ "$*" = @(last|week|month) || "${*//[^0-9]}" > 20181231 || "$OPT3" ]]
 			then
-				#asynchronous loop
 				for COMPLETE in /community/ /packages/
 				do 	{
 						#set url
@@ -931,12 +922,8 @@ searchf() {
 						pagepf
 					} &
 				done
-
-				#wait for subprocesses
-				wait
-				exit
-			#if no valid repo is detected,
-			#auto load defaults repos
+				wait ;exit
+			#if no valid repo is detected, set default repos
 			elif [[ ! "$LASTARG" =~ (${VALIDREPOS}) ]]
 			then
 				#asynchronous loop
@@ -954,18 +941,12 @@ searchf() {
 						pagepf  #obs: will not get exit code from subshell
 					} &
 				done
-
-				#wait for subprocesses
-				wait
-				exit
+				wait ;exit
 			fi
 		fi
-	
-		#set url
 		URLADD="$URL2/${*}/$LASTARG/$COMPLETE"
 	#test if input is an index letter and set URLs
 	elif (( ${#1} == 1 )); then
-		#get data and set url
 		URLADD="$URL1/$1/"
 	else
 		#set date url
@@ -981,14 +962,8 @@ searchf() {
 		fi
 	fi
 	
-	if (( ISOOPT ))
-	then 	URLADD="$URL3/${*}/$LASTARG"
-	fi
-	
-	#consolidate path
+	(( ISOOPT )) && URLADD="$URL3/${*}/$LASTARG"
 	URLADD=$(consolidatepf "$URLADD")
-
-	#get page
 	LIST=$(cachef 2 "$URLADD")
 
 	#process page
@@ -1005,17 +980,14 @@ lupf() {
 	#get timestamps for each user argument
 	for dt in "$@"
 	do
-		#test if input is DATE
-		#and get DATE from checkdatef
+		#test if input is DATE and get DATE from checkdatef
 		date=$(checkdatef "$dt") && dt="${date:-$dt}"
 
 		#last update and last sync
 		for file in lastupdate lastsync
 		do
-			#timestamp format
 			fmt='%s  %FT%T%Z'
 			
-			#consolidate path
 			URLADD="$URL2/$dt/$file"
 			URLADD=$(consolidatepf "$URLADD")
 			
@@ -1049,8 +1021,7 @@ allf() {
 	
 	#print list and stats
 	echo "$APKGS" | sort -V
-	echo "Pkgs: $(wc -l <<<"$APKGS")"
-	echo "<$URL1/.all>"
+	printf 'Pkgs: %d\n''%s\n'  "$(wc -l <<<"$APKGS")" "<$URL1/.all>"
 }
 
 #-n arch news feed
@@ -1058,14 +1029,9 @@ allf() {
 feedf() {
 	local NEWSPAGE SIGNAL
 
-	#get feed and process
 	NEWSPAGE=$(cachef 2 --header "$UAG" 'http://www.archlinux.org/feeds/news/')
-
-	#check for error
-	SIGNAL="$?"
-	(( SIGNAL > 0 )) && exit $SIGNAL
+	SIGNAL="$?" ;((SIGNAL>0)) && exit $SIGNAL
 	
-	#process
 	NEWSPAGE=$(sed -e ':a;N;$!ba;s/\n/ /g' -e 's/&gt;/ç/g ; s/&nbsp;//g ; s/;code/&\\n/g' \
 		-e 's/&lt;\/aç/£/g ; s/href\=\"/§/g ; s/<title>/\n---\n\n :: \\e[01;31m/g' \
 		-e 's/<\/title>/\\e[00m ::\n/g ; s/<link>/ [ \\e[01;36m/g' \
@@ -1078,7 +1044,6 @@ feedf() {
 		-e 's/&amp;gt;/>/g ; s/&amp;lt;/</g' \
 		-e 's/<[^>]*>/ /g' <<< "$NEWSPAGE")
 
-	#pretty-print
 	echo -e "$NEWSPAGE" | sed 's/[^ ]\s*::[^\n]/&\n ::/g' | tac -b -s '---' 
 }
 #https://bbs.archlinux.org/viewtopic.php?id=30155
@@ -1087,8 +1052,6 @@ feedf() {
 feedfb()
 {
 	local l articles counter perpage pnum p page links links2 
-	
-	#defaults
 	articles=6 
 	perpage=50
 
@@ -1114,7 +1077,7 @@ feedfb()
 
 	#check
 	if [[ -z "${links2// }" ]]
-	then echo "$SN: script function error" >&2 ;exit 1
+	then 	echo "$SN: script function error" >&2 ;exit 1
 	fi
 	
 	#get NUM links and invert order to print
@@ -1125,7 +1088,6 @@ feedfb()
 		(( counter == articles )) && break
 	done <<<"$links2"
 
-	#set cli webbrowser
 	checkwbrowserf
 	
 	#process links
@@ -1133,7 +1095,7 @@ feedfb()
 	do
 		#add url prefix
 		l="https://www.archlinux.org$l"
-
+		
 		#print simple feedback to stderr
 		[[ -t 1 ]] || printf '>>>%s/%s\r' "$counter" "$articles" >&2
 
@@ -1154,18 +1116,11 @@ feedfb()
 userrepof() { 
 	local REPOLIST SIGNAL
 
-	#get list
 	REPOLIST=$(cachef 2 'https://wiki.archlinux.org/index.php/Unofficial_user_repositories')
-
-	#check for error
-	SIGNAL="$?"
-	((SIGNAL > 0)) && exit $SIGNAL
+	SIGNAL="$?" ;((SIGNAL>0)) && exit $SIGNAL
 	
-	#list and stats
 	REPOLIST=$(awk '/^Server =/ { print $3 }' <<<"$REPOLIST")
-	echo "$REPOLIST"
-	echo "Repos: $(wc -l <<<"$REPOLIST")"
-	echo "<https://wiki.archlinux.org/index.php/Unofficial_user_repositories>"
+	printf '%s\n''Repos: %d\n''%s\n'  "$REPOLIST" "$(wc -l <<<"$REPOLIST")" "<https://wiki.archlinux.org/index.php/Unofficial_user_repositories>"
 } 
 #https://www.linuxsecrets.com/archlinux-wiki/wiki.archlinux.org/index.php/Unofficial_user_repositories.html
 #https://wiki.archlinux.org/index.php/Unofficial_user_repositories
@@ -1173,16 +1128,13 @@ userrepof() {
 
 #parse options
 while getopts :23acdhikKlnopsuv opt
-do
-	case $opt in
+do 	case $opt in
 		3) #user a mirror server, *not* and archieval server
 			OPT3=1
 			;;
 		2) #try arkena archives, a good alternative archive url
 		      #but is down for short while
-			URL1=$BURL/packages
-			URL2=$BURL/repos
-			URL3=$BURL/iso
+			URL1=$BURL/packages URL2=$BURL/repos URL3=$BURL/iso
 			;;
 		a) #list all pkgs
 			ALLOPT=1
@@ -1201,7 +1153,7 @@ do
 			ISOOPT=1
 			;;
 		k) #pkg detailed info, also see ':'
-			INFOOPT=1
+			((++INFOOPT))
 			;;
 		K) #pkg more detailed info, also see ':'
 			INFOOPT=2
@@ -1225,8 +1177,7 @@ do
 			grep -m1 '# v' "$0"
 			exit
 			;;
-		\?)
-			printf '%s: invalid option -- -%s\n' "$SN" "$OPTARG" >&2
+		\?) 	printf '%s: invalid option -- -%s\n' "$SN" "$OPTARG" >&2
 			exit 1
 			;;
 	esac
@@ -1243,13 +1194,12 @@ elif command -v wget &>/dev/null; then
 	YOURAPP=( wget -O- )
 	YOURAPP2=( "${YOURAPP[@]}" -q --show-progress )
 	YOURAPP3=( "${YOURAPP[@]}" -q )
-else
-	printf '%s: warning -- curl or wget is required\n' "$SN" >&2
+else 	printf '%s: warning -- curl or wget is required\n' "$SN" >&2
 	exit 1
 fi
 
-#make a cache directory
-[[ -d "$CACHEDIR" ]] || mkdir -- "$CACHEDIR" || exit
+#make cache directory
+[[ -d "$CACHEDIR" ]] || mkdir -p -- "$CACHEDIR" || exit
 
 #set the default html filter
 WBROWSER=( "${WBROWSERDEF[@]}" )
@@ -1258,19 +1208,17 @@ WBROWSER=( "${WBROWSERDEF[@]}" )
 if [[ "$OPT3" ]]
 then
 	#disable date checking and autocorrection
-	URL2="${MURL%/}" NOCKOPT=1 OPT3a=$(($#==1?1:0))
+	URL2="${MURL%/}" NOCKOPT=1 OPT3=$#
 	
 	#as this is a mirror address only, DATE must be empty or '.'
 	#empty args will be removed later on with reexpanding $@
 	set -- . "$@"
 
-	#set cli webbrowser
 	checkwbrowserf
 fi
 
-#default repo/date?
-#user set environment variable $ALADATE ?
-[[ "$ALADATE" ]] && DEFALADATE="$ALADATE"
+#default repo/date
+[[ "$ALADATE" ]] && DEFALADATE="$ALADATE"  #env var
 [[ "${1,,}" = @(lastly|weekly|monthly) ]] && set -- "${1%[lL][yY]}" "${@:2}"
 
 #call opt functions
@@ -1283,7 +1231,7 @@ then 	feedfb "$@"
 elif (( USERREPOOPT ))
 then 	userrepof
 #list repo all pkgs
-elif (( ALLOPT )) || [[ "$OPT3$ISOOPT$1" = . ]]
+elif (( ALLOPT )) || [[ "$ISOOPT$OPT3$2$1" = . ]]
 then 	allf
 #last update and sync timestamps
 elif (( LUPOPT ))
@@ -1298,17 +1246,16 @@ then
 	fi
 #-k dump pkg info only; set automatically with . and .. positional arguments
 elif ((INFOOPT)) \
-	|| [[ "${@:$#+OPT3a:1}" = [.*]* && "${@:$#:1}" != .. ]] \
-	|| [[ "${@:$#:1}" = [.*][.*][!.*]* || "${@:$#:1}" = [.*][!.*]* ]] \
-	|| [[ "${@:$#-1+OPT3a:1}" = . ]] || [[ "${@:$#-1:1}" = .. ]]
+	|| [[ "${@:$#+(OPT3?0:(${OPT3:+1}0?1:0)):1}" = [.*]*  &&  "${@:$#:1}" != .. ]] \
+	|| [[ "${@:$#:1}" = [.*][.*][!.*]*  ||  "${@:$#:1}"  = [.*][!.*]* ]] \
+	|| [[ "${@:$#-1+(OPT3>1?0:(OPT3?(${OPT3:+1}0?1:0):0)):1}" = .  ||  "${@:$#-1:1}" = .. ]]
 then 	infodumpf "$@"
-#default opt
+#defaults opt
 else
 	[[ "$*" = .. ]] && set -- "$DEFALADATE" "$@"
-	
-	#set args for opt functions
-	(( COPT )) && set -- "${@:1:3}"  #opt -c
-
+	(( COPT )) && set -- "${@:1:3}"  #set args for opt -c
 	#search for package/DATE/repo
-	searchf	"$@"
+	searchf "$@"
 fi
+#syntax tests at `ala.sh.notes.txt'
+
