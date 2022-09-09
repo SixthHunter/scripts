@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.16.3  sep/2022  by castaway
+# v0.16.4  sep/2022  by castaway
 
 #defaults
 #script name
@@ -39,7 +39,7 @@ MURLDEF=http://archlinux.c3sl.ufpr.br
 #MURLDEF=http://ftp.gwdg.de/pub/linux/archlinux/
 
 #define url complements
-URL=${URL%/}  BURL=${BURL%/}  MURL="${MURL:-$MURLDEF}"  MURL=${MURL%/}
+URL=${URL%/}  BURL=${BURL%/}  MURL="${MURL:-$MURLDEF}" MURL=${MURL%/}
 URL1=$URL/packages
 URL2=$URL/repos
 URL3=$URL/iso
@@ -701,25 +701,21 @@ infodumpf() {
 	#remove autocomplete operator
 	[[ "${@:$#}" = .. ]] && set -- "${@:1:$#-1}" '*'
 
-	if lastarghelperf "${@:$#}"  #last arg must be pkg name
-	then 	PKGNAME="${@:$#}" ; set -- "${@:1:$#-1}"
-	fi
 	#is calling repos directly?
-	if [[ "$PKGNAME" =~ ^/?($VALIDREPOS) ]]
+	if [[ "${@:$#}" =~ ^/?($VALIDREPOS) ]]
 	then
 		#is $OPT3 set (experimental)?
-		if [[ "$OPT3" ]]
-		then 	set -- "$@" "$PKGNAME"
-		else 	set -- "$DEFALADATE" "$PKGNAME" "$@"
-		fi
+		[[ ! "$OPT3" ]] && set -- "$DEFALADATE" "$@"
 		PKGNAME='*'
+	elif lastarghelperf "${@:$#}"  #last arg must be pkg name
+	then 	PKGNAME="${@:$#}" ; set -- "${@:1:$#-1}"
 	fi
 
 	[[ "$PKGNAME" = . ]] && PKGNAME='*'
 	PKGNAME="${PKGNAME#.}" PKGNAME="${PKGNAME#.}"
 
 	#test if there is any repo name in input. is calling REPOS directly? forgot DATE info?
-	[[ -z "${1//[ .]}" || "$1" =~ ^/?($VALIDREPOS) ]] && set -- "$DEFALADATE" "$@"
+	[[ -z "${1//[ .]}$OPT3" || "$1" =~ ^/?($VALIDREPOS) ]] && set -- "$DEFALADATE" "$@"
 	
 	#remove all /
 	set --  ${@//\// }
@@ -1262,8 +1258,7 @@ WBROWSER=( "${WBROWSERDEF[@]}" )
 if [[ "$OPT3" ]]
 then
 	#disable date checking and autocorrection
-	URL2="${MURL%/}"
-	NOCKOPT=1
+	URL2="${MURL%/}" NOCKOPT=1 OPT3a=$(($#==1?1:0))
 	
 	#as this is a mirror address only, DATE must be empty or '.'
 	#empty args will be removed later on with reexpanding $@
@@ -1301,21 +1296,19 @@ then
 	then 	printf '%s: err -- refused\n' "$SN" >&2 ;exit 1
 	else 	calcf "${@}"
 	fi
-#-k dump pkg info only
-#also automatically set if last arg matches .db
+#-k dump pkg info only; set automatically with . and .. positional arguments
 elif ((INFOOPT)) \
-	|| [[ "${@:$#}" = [.*] ]] \
-	|| [[ "${@:$#}" = .* && "${@:$#}" != .. ]] \
-	|| [[ "${@:$#-1:1}" = . ]] || [[ "${@:$#-1:1}" = .. ]]
+	|| [[ "${@:$#+OPT3a:1}" = [.*]* && "${@:$#:1}" != .. ]] \
+	|| [[ "${@:$#:1}" = [.*][.*][!.*]* || "${@:$#:1}" = [.*][!.*]* ]] \
+	|| [[ "${@:$#-1+OPT3a:1}" = . ]] || [[ "${@:$#-1:1}" = .. ]]
 then 	infodumpf "$@"
 #default opt
 else
 	[[ "$*" = .. ]] && set -- "$DEFALADATE" "$@"
 	
 	#set args for opt functions
-	#check repo sizes opt -c
-	(( COPT )) && set -- "${@:1:3}"
+	(( COPT )) && set -- "${@:1:3}"  #opt -c
 
 	#search for package/DATE/repo
-	searchf	"${@}"
+	searchf	"$@"
 fi
