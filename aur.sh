@@ -1,6 +1,6 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.1  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
@@ -9,12 +9,16 @@ HELP="${0##*/} - list aur packages
 
 	${0##*/} PKG_NAME [SEARCH_BY] [SORT_BY]
 	${0##*/} -p PKG_NAME
-	${0##*/} [''|.|..]   #scrape
+	${0##*/} [.|..|'']
 
 
-	List and sort AUR packages.
+	List, sort and print PKGBUILD of  AUR packages.
 
-	Keys SEARCH_BY and SORT_BY are as follows:
+	Package info scraping can be set. Operator \`.' prints a list with
+	all AUR packages, \`..' prints package metadata (json) and empty
+	string scrapes too (slow).
+
+	Keys for SEARCH_BY and SORT_BY are as follows:
 
 		nd 	 name/description
 		n 	 name
@@ -33,7 +37,7 @@ HELP="${0##*/} - list aur packages
 
 OPTIONS
 	-h 	This help page.
-	-p 	Print pakcage PKGBUILD."
+	-p 	Print package PKGBUILD."
 
 
 optnf()
