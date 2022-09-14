@@ -1,6 +1,6 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1.1  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.2  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
@@ -73,13 +73,13 @@ aur_procf()
 {
 	local n buf REPLY
 	sed -n  -e 's/&gt;/>/g ;s/&lt;/</g ;s/&amp;/\&/g ;s/&nbsp;/ /g ;s/&quot;/"/g' \
-		-e "s/&#39;/'/g" -e 's/.*<tr\>.*/<p>--------<\/p>\n&/' -e 's/<td>/&@/' \
+		-e "s/&#39;/'/g" -e 's/.*<tr\>.*/<p>--------<\/p>\n&/' \
 		-e 's/^\s*//' -e '/<tbody>/,/<\/tbody>/ p' \
 	| sed -e 's/<[^>]*>//g' -e '/^\s*$/d' \
 	| while ((++n)) ;read
 		do 	if [[ $REPLY = --* ]]
 			then 	echo "$buf" ;buf= n= 
-			else 	buf="${buf:+$buf$'\t'}""${REPLY#@}"
+			else 	buf="${buf:+$buf$'\t'}""${REPLY}"
 			fi
 		done
 }
