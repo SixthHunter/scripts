@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.16.5  sep/2022  by castaway
+# v0.16.6  sep/2022  by castaway
 
 #defaults
 #script name
@@ -76,7 +76,7 @@ SYNOPSIS
 	$SN  [-2d]        [DATE] [REPO] [x86_64|i686] [..]
 	$SN  [-2d] [-cc]  [DATE] [REPOS]
 	$SN  [-2d] -i     [DATE|URLPATH]
-	$SN  [-2d] [-kK]  [DATE] [REPOS] [x86_64|i686] [.|*|PKGNAME] 
+	$SN  [-2d] [-kk]  [DATE] [REPOS] [x86_64|i686] [[.|*] PKGNAME] 
 	$SN  [-2d] -u     [DATES]
 	$SN  -nn          [NUM]
 	$SN  -hov
@@ -89,10 +89,9 @@ SYNOPSIS
 
 	This script is an ALA explorer. If no argument is given, list
 	alphabetic index of package names;  if argument is a dot  \`.' ,
-	list all available ALA packages (same as option -a); if a for-
-	ward slash \`/' is given, list repos by year. If input is package
-	name, the script will list all its package versions, see usage
-	example (1).
+	list all ALA packages and versions; if a forward slash \`/' is
+	given, list repos by year. If input is package name, the script
+	will list all its package versions, see usage example (1).
 
 	Relative URLPATHS can be used to navigate downwards levels. An
 	autocomplete operator \`..' to print packages of a repo is avail-
@@ -110,6 +109,8 @@ SYNOPSIS
 	static data requests (however special repos change often). Note
 	cached data is updated automatically if older than 24 hours, cache
 	dir=$CACHEDIR .
+
+	Option -a lists all AUR packages. \`aur.sh' is warped if available.
 
 	The oficial <archive.archlinux.org> archive was started at end
 	of august 2013.
@@ -141,13 +142,13 @@ DESCRIPTION
 	community-testing, gnome-unstable, kde-unstable, multilib,
 	multilib-staging, multilib-testing, staging and testing.
 
-	To list all packages at ALA and their versions, use option -a or
-	operator \`.' with no further positional arguments. To calculate
-	the size of repositories (core, extra, etc) of a specific DATE
-	use option -c. Default repos to option -c are ${DEFCALCREPOS[*]} .
-	Some other repos can be included in the sum function, check the
-	script source code, section defaults. Pass twice to get data
-	from repo.db.tar.gz files of repos instead from repo html pages.
+	To list all packages at ALA and their versions, set operator \`.'
+	with no further positional arguments. To calculate the size of
+	repositories (core, extra, etc) of a specific DATE use option -c.
+	Default repos to option -c are ${DEFCALCREPOS[*]} . Some other
+	repos can be included in the sum function, check the script source
+	code, section defaults. Pass twice to get data from repo.db.tar.gz
+	files of repos instead from repo html pages.
 
 	Option -k dumps package information of a repo database .db file
 	from a given DATE or special repo.  PACKAGENAME must be last po-
@@ -339,7 +340,7 @@ OPTIONS
 	-nn [NUM]  Arch Linux news feed alternative, fetch NUM news.
 	-o 	   List unofficial user repos (from Arch Wiki).
 	Functions
-	-a 	   List all packages and versions from server.
+	-a 	   List all packages from AUR.
 	-c  [DATE] [REPOS]
 		   Calculate REPOS sizes from DATE; file sizes from webpage;
 		   defaults DATE=$DEFALADATE, REPOS=( ${AUTOREPOS[*]} ).
@@ -372,7 +373,7 @@ cachef()
 		2) app=("${YOURAPP2[@]}") ;;
 		3) app=("${YOURAPP3[@]}") ;;
 	esac
-	
+
 	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]] \
 		|| [[ "${fname##*/}" != *repos\.20[0-9][0-9]\.* && $(find "$fpath" -mtime +2) ]]
 	then
@@ -1000,7 +1001,7 @@ lupf() {
 	done
 }
 
-#-a list all pkgs from the server
+#`.' list all pkgs from the server
 allf() {
 	local APKGS UNXZ
 	
@@ -1136,8 +1137,8 @@ do 	case $opt in
 		      #but is down for short while
 			URL1=$BURL/packages URL2=$BURL/repos URL3=$BURL/iso
 			;;
-		a) #list all pkgs
-			ALLOPT=1
+		a) #aur pkgs
+			AUROPT=1 ;break
 			;;
 		c) #calculate repo sizes
 			((++COPT))
@@ -1198,6 +1199,16 @@ else 	printf '%s: warning -- curl or wget is required\n' "$SN" >&2
 	exit 1
 fi
 
+#aur pkgs
+if ((AUROPT))
+then 	if command -v aur.sh &>/dev/null
+	then 	aur.sh "${@:-.}"
+	else 	pkgs=$(getf https://aur.archlinux.org/packages.gz)
+		echo "$pkgs"$'\n'"packages_: $(wc -l <<<"$pkgs")"
+	fi
+	exit
+fi
+
 #make cache directory
 [[ -d "$CACHEDIR" ]] || mkdir -p -- "$CACHEDIR" || exit
 
@@ -1231,7 +1242,7 @@ then 	feedfb "$@"
 elif (( USERREPOOPT ))
 then 	userrepof
 #list repo all pkgs
-elif (( ALLOPT )) || [[ "$ISOOPT$OPT3$2$1" = . ]]
+elif [[ "$ISOOPT$OPT3$2$1" = . ]]
 then 	allf
 #last update and sync timestamps
 elif (( LUPOPT ))
