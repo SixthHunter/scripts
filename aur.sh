@@ -1,6 +1,6 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1.3  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.4  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
@@ -62,7 +62,7 @@ cachef()
 		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
 		"${YOURAPP[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
 		trap \  INT TERM
-		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' "$fpath" && {
+		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' -e 'Invalid branch: ' "$fpath" && {
 			rm -- "$fpath" 2>/dev/null ;ret=1
 		}
 	else 	cat -- "$fpath" ;ret=$?
