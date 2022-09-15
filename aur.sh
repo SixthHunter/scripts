@@ -1,9 +1,9 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1.4  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.6  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
-UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
+UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'  #;UAG='user-agent: Mozilla/5.0 Gecko'
 #cache directory
 #defaults=/tmp/aur.sh.cache
 CACHEDIR="${TMPDIR:-/tmp}/${0##*/}".tmp
@@ -55,17 +55,17 @@ cachef()
 	url="${@: -1}" fname="${url/\/\/aur.archlinux.org\//aur}.cache"
 	fname="${fname/https:}" fname="${fname/http:}" fname="${fname//[\/:]/.}"
 	fname="${fname//../.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname#.}"
-	fpath="$CACHEDIR/$fname"
+	fpath="$CACHEDIR/$fname" SKIP=
 
 	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]] || [[ $(find "$fpath" -mtime +2) ]]
 	then
-		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
+		trap "rm -- \"$fpath\" ;exit" INT TERM
 		"${YOURAPP[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
 		trap \  INT TERM
-		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' -e 'Invalid branch: ' "$fpath" && {
+		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' -e 'Invalid branch:' -e 'No packages matched your search criteria' "$fpath" >&2 && {
 			rm -- "$fpath" 2>/dev/null ;ret=1
 		}
-	else 	cat -- "$fpath" ;ret=$?
+	else 	cat -- "$fpath" ;ret=$? SKIP=1
 		echo "CACHE: <$fpath>" >&2
 	fi
 
@@ -98,14 +98,14 @@ optnf()
 #process aur page
 aur_procf()
 {
-	local n buf REPLY
+	local buf REPLY
 	sed -n  -e 's/&gt;/>/g ;s/&lt;/</g ;s/&amp;/\&/g ;s/&nbsp;/ /g ;s/&quot;/"/g' \
 		-e "s/&#39;/'/g" -e 's/.*<tr\>.*/<p>--------<\/p>\n&/' \
 		-e 's/^\s*//' -e '/<tbody>/,/<\/tbody>/ p' \
 	| sed -e 's/<[^>]*>//g' -e '/^\s*$/d' \
-	| while ((++n)) ;read
+	| while read
 		do 	if [[ $REPLY = --* ]]
-			then 	echo "$buf" ;buf= n= 
+			then 	echo "$buf" ;buf=
 			else 	buf="${buf:+$buf$'\t'}""${REPLY}"
 			fi
 		done
@@ -122,21 +122,24 @@ aur_getf()
 #simple aur search
 aurf()
 {
-	local page info pagepkg n
+	local page info pagepkg sfactor wait n SKIP
 	pagepkg=250  #pkgs per page
 	n=1
+	trap exit INT HUP
 
 	page=$(aur_getf "${@:1:3}") || return
 	[[ $PKGOPT ]] && { 	echo "$page" ;return ;}
 	info=($(sed -n -E -e 's/.*\<([0-9]+) [Pp]ackages [Ff]ound.*/\1/ p' -e 's/.*[Pp]age ([0-9]+) of ([0-9]+).*/\1 \2/ p' <<<"$page"))
-	
+	((sfactor=info[0]/3030)) ;((sfactor<5)) || sfactor=5
 	fun()
 	{
 		echo "$page"
-		for ((p=pagepkg;p<info[0];p+=pagepkg))    #((p=${info[1]};p<${info[2]};++p))
-		do 	echo "page: $((n+1))/${info[2]}    pkgs: ${info[0]}    query: ${QUERY}" >&2
-			aur_getf "${@:1:3}" $((++n))
-			((OPTSCRAPE)) && sleep 0.6
+		for ((p=pagepkg;p<info[0];p+=pagepkg))
+		do 	aur_getf "$1" "$2" "$3" $((++n))
+			echo "page: $((n+1))/${info[2]}    pkgs: $p/${info[0]}    query: ${QUERY}    (wait ${sfactor}s)" >&2
+			if ((p!=pagepkg)) && ((OPTSCRAPE-SKIP))
+			then 	((!sfactor)) && sleep 0.6 || sleep $sfactor
+			fi
 		done
 	}
 	if [[ -t 1 ]] && ((!OPTSCRAPE))
