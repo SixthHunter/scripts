@@ -1199,21 +1199,21 @@ else 	printf '%s: warning -- curl or wget is required\n' "$SN" >&2
 	exit 1
 fi
 
-#aur pkgs
-if ((AUROPT))
-then 	if command -v aur.sh &>/dev/null
-	then 	aur.sh "${@:-.}"
-	else 	pkgs=$(getf https://aur.archlinux.org/packages.gz)
-		echo "$pkgs"$'\n'"packages_: $(wc -l <<<"$pkgs")"
-	fi
-	exit
-fi
-
 #make cache directory
 [[ -d "$CACHEDIR" ]] || mkdir -p -- "$CACHEDIR" || exit
 
 #set the default html filter
 WBROWSER=( "${WBROWSERDEF[@]}" )
+
+#aur pkgs
+if ((AUROPT))
+then 	if command -v aur.sh &>/dev/null
+	then 	aur.sh "${@:-.}"
+	else 	pkgs=$(cachef 2 https://aur.archlinux.org/packages.gz)
+		echo "$pkgs"$'\n'"packages_: $(wc -l <<<"$pkgs")"
+	fi
+	exit
+fi
 
 #use a mirror address instead of archieve?
 if [[ "$OPT3" ]]
