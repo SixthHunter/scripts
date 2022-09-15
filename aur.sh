@@ -5,7 +5,8 @@
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
 
-HELP=" 	${0##*/} - list aur packages
+HELP="NAME
+	${0##*/} -- list aur packages
 
 
 SYNOPSIS
