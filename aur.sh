@@ -1,6 +1,6 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1.6  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.7  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'  #;UAG='user-agent: Mozilla/5.0 Gecko'
@@ -99,16 +99,16 @@ optnf()
 aur_procf()
 {
 	local buf REPLY
-	sed -n  -e 's/&gt;/>/g ;s/&lt;/</g ;s/&amp;/\&/g ;s/&nbsp;/ /g ;s/&quot;/"/g' \
+	while read
+	do 	if [[ $REPLY = --* ]]
+		then 	echo "$buf" ;buf=
+		else 	buf="${buf:+$buf$'\t'}""${REPLY}"
+		fi
+	done < <(sed -n  -e 's/&gt;/>/g ;s/&lt;/</g ;s/&amp;/\&/g ;s/&nbsp;/ /g ;s/&quot;/"/g' \
 		-e "s/&#39;/'/g" -e 's/.*<tr\>.*/<p>--------<\/p>\n&/' \
 		-e 's/^\s*//' -e '/<tbody>/,/<\/tbody>/ p' \
-	| sed -e 's/<[^>]*>//g' -e '/^\s*$/d' \
-	| while read
-		do 	if [[ $REPLY = --* ]]
-			then 	echo "$buf" ;buf=
-			else 	buf="${buf:+$buf$'\t'}""${REPLY}"
-			fi
-		done
+		| sed -e 's/<[^>]*>//g' -e '/^\s*$/d')
+	[[ $buf ]] && echo "$buf"
 }
 #aur_getf [query] [search_by] [sort_by] [output_start]
 aur_getf()
