@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ala.sh -- arch linux archive explorer, search and download
-# v0.16.6  sep/2022  by castaway
+# v0.16.7  sep/2022  by castaway
 
 #defaults
 #script name
@@ -363,9 +363,9 @@ OPTIONS
 cachef()
 {
 	local opt url fname fpath ret
-	opt=$1 url="${@: -1}"
-	fname="${url/https:\/\/archive.archlinux.org\/}.cache" fname="${fname/https:}" fname="${fname/http:}"
-	fname="${fname//[\/:]/.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname#.}"
+	opt=$1 url="${@: -1}" fname="${url/https:\/\/archive.archlinux.org\/}.cache"
+	fname="${fname/https:}" fname="${fname/http:}" fname="${fname//[\/:]/.}"
+	fname="${fname//../.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname#.}"
 	fpath="$CACHEDIR/$fname"
 
 	case $opt in
@@ -380,7 +380,7 @@ cachef()
 		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
 		"${app[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
 		trap \  INT TERM
-		grep --color=always -qi -e '404 Not Found' "$fpath" && {
+		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' "$fpath" && {
 			rm -- "$fpath" 2>/dev/null ;ret=1
 		}
 	else 	cat -- "$fpath" ;ret=$?

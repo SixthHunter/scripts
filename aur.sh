@@ -1,9 +1,12 @@
 #!/bin/env bash
 # aur.sh - list aur packges
-# v0.1.2  sep/2022  by mountaineerbr  GPLv3+
+# v0.1.3  sep/2022  by mountaineerbr  GPLv3+
 
 #chrome on windows 10
 UAG='user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
+#cache directory
+#defaults=/tmp/aur.sh.cache
+CACHEDIR="${TMPDIR:-/tmp}/${0##*/}".tmp
 
 HELP="NAME
 	${0##*/} -- list aur packages
@@ -40,9 +43,36 @@ SYNOPSIS
 
 OPTIONS
 	-h 	This help page.
+	-l 	Update disc cache file immediately.
 	-p 	Print package PKGBUILD."
 
 
+#cache files
+#wrapper around curl/wget commands
+cachef()
+{
+	local url fname fpath ret
+	url="${@: -1}" fname="${url/\/\/aur.archlinux.org\//aur}.cache"
+	fname="${fname/https:}" fname="${fname/http:}" fname="${fname//[\/:]/.}"
+	fname="${fname//../.}" fname="${fname//../.}" fname="${fname//../.}" fname="${fname#.}"
+	fpath="$CACHEDIR/$fname"
+
+	if [[ ! -s "$fpath" || "$OPTL" -gt 0 ]] || [[ $(find "$fpath" -mtime +2) ]]
+	then
+		trap "trap \\  INT TERM ;rm -- \"$fpath\" ;echo ;return" INT TERM
+		"${YOURAPP[@]}" "$url" | tee -- "$fpath" ;ret="${PIPESTATUS[0]}"
+		trap \  INT TERM
+		grep --color=always -qi -e '404 Not Found' -e '404 - Page Not Found' "$fpath" && {
+			rm -- "$fpath" 2>/dev/null ;ret=1
+		}
+	else 	cat -- "$fpath" ;ret=$?
+		echo "CACHE: <$fpath>" >&2
+	fi
+
+	return ${ret:-0}
+}
+
+#select option from pos args
 optnf()
 {
 	case "${1}" in
@@ -64,12 +94,6 @@ optnf()
 	esac
 }
 
-#get function
-getf()
-{
-	curl --compressed --insecure -Lb non-existing -H "$UAG" -H 'Referer: https://aur.archlinux.org/packages/' "$@"
-}
-
 #aurf helpers
 #process aur page
 aur_procf()
@@ -89,7 +113,7 @@ aur_procf()
 #aur_getf [query] [search_by] [sort_by] [output_start]
 aur_getf()
 {
-	getf "https://aur.archlinux.org/packages?O=${4:-0}&SeB=${2:-n}&K=${1}&outdated=&SB=${3:-n}&SO=d&PP=${pagepkg:-250}&submit=Go"
+	cachef "https://aur.archlinux.org/packages?O=${4:-0}&SeB=${2:-n}&K=${1}&outdated=&SB=${3:-n}&SO=d&PP=${pagepkg:-250}&submit=Go"
 }
 #O   = start of output
 #SB  = Sort By:   n - name, v - votes, p - popularity, m - maintainer, l = last modified
@@ -133,12 +157,12 @@ pkgbf()
 	url=https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD
 	urlb=https://aur.archlinux.org/packages
 
-	if page=$(getf "$url?h=${1}")
+	if page=$(cachef "$url?h=${1}")
 		[[ $page =~ \<div\ class=[\'\"]error[\'\"]\>[Ii]nvalid\ [Bb]ranch: ]]
 	then 	if 	[[ $(PKGOPT=1 aurf "$1" n p) =~ \<\a\ href=\"/packages/([^\"/]*)\"\> ]] &&
-			[[ $(getf "$urlb/${BASH_REMATCH[1]}") =~ \<\a\ href=\"/pkgbase/([^\"/]*)\"\> ]]
+			[[ $(cachef "$urlb/${BASH_REMATCH[1]}") =~ \<\a\ href=\"/pkgbase/([^\"/]*)\"\> ]]
 		then 	echo "match: ${BASH_REMATCH[1]}"
-			page=$(getf "$url?h=${BASH_REMATCH[1]}")
+			page=$(cachef "$url?h=${BASH_REMATCH[1]}")
 		else 	return 2
 		fi
 	fi
@@ -151,25 +175,39 @@ aur_pkgf()
 	if [[ $1 = .. ]]
 	then 	url=https://aur.archlinux.org/packages-meta-ext-v1.json.gz
 		if command -v jq &>/dev/null
-		then 	getf "$url" | jq .
-		else 	getf "$url"
+		then 	cachef "$url" | jq .
+		else 	cachef "$url"
 		fi
-	else 	pkgs=$(getf https://aur.archlinux.org/packages.gz)
+	else 	pkgs=$(cachef https://aur.archlinux.org/packages.gz)
 		echo "$pkgs"$'\n'"packages_: $(wc -l <<<"$pkgs")"
 	fi
 }
 
 
 #parse opts
-while getopts aph c
+while getopts ahlp c
 do 	case $c in
 		a) 	: compatibility with ala.sh ;;
 		h) 	echo "$HELP" ;exit ;;
+		l) 	OPTL=1 ;;
 		p) 	OPTP=1 ;;
 		?) 	exit ;;
 	esac
 done ; unset c
 shift $((OPTIND -1))
+
+#check for pkgs
+if command -v curl &>/dev/null; then
+	YOURAPP=(curl --compressed --insecure -Lb nil)
+elif command -v wget &>/dev/null; then
+	YOURAPP=(wget -O- -q --show-progress)
+else 	printf '%s: warning -- curl or wget is required\n' "${0##*/}" >&2
+	exit 1
+fi
+YOURAPP=("${YOURAPP[@]}" --header "$UAG" --header 'Referer: https://aur.archlinux.org/packages/')
+
+#make cache directory
+[[ -d "$CACHEDIR" ]] || mkdir -p -- "$CACHEDIR" || exit
 
 #set pos args
 if [[ ! $1 && ${1+x} ]]
