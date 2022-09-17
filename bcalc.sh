@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #!/usr/bin/env zsh
 # bcalc.sh -- shell maths wrapper
-# v0.16.6  jun/2022  by mountaineerbr
+# v0.16.7  sep/2022  by mountaineerbr
 
 #record file path (environment, optional defaults)
 BCRECFILE="${BCRECFILE:-"$HOME/.bcalc_record.tsv"}"
@@ -345,7 +345,7 @@ notef()
 	local text num
 	text="$*" text="${text//[$'\t\n']/ }"
 	[[ $text =~ ^\ *[0-9]+\ * ]] ;[[ $KSH_VERSION ]] && MATCH="${.sh.match}"
-	num="${MATCH:-${BASH_REMATCH[0]}}" text="${text#$num}"
+	num="${MATCH:-${BASH_REMATCH[0]}}" text="${text#$num}" text="${text//\//\\/}"
 	[[ $text =~ ^\ * ]]
 	sed -i -e "${num:-$} s/ *$/ ${text#"${MATCH:-${BASH_REMATCH[0]}}"}/ ;${num:-$} s/"$'\t'" */"$'\t'"/g" "$BCRECFILE"
 }
