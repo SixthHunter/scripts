@@ -1,57 +1,93 @@
 #!/usr/bin/env bash
-# v0.3.4
-# imagens de radar do ipmet
+# v0.4  by mountaineerbr  GPLv3+
+# imagens de radar do ipmet e simepar
 # Instituto de Pesquisas Meteorológicas (UNESP)
+# Sistema de Tecnologia e Monitoramento Ambiental do Paraná
 
 #image viewer
 IMGVIEWER=( feh )
 
 #tempo entre conexões
+#ipmet
 SLEEP=6m
-SLEEPERR=30m  #on error
+#simepar
+SLEEP_SIM=10m
+#on error
+SLEEPERR=30m
 
 #temp dir
 TEMPD="${TMPDIR:-/tmp}/ipmet"
 
 #keep track of process
 PIDFILE="${TEMPD%/}/ipmet.pid"
-#defaults=/tmp/ipmet_radar/ipmet.pid
 
-#url parameters
-BASEURL=https://www.ipmetradar.com.br/ipmet_html/radar
-REFERER=Referer:https://www.ipmetradar.com.br/2imagemRadar.php
+HELP=" 	ipmet.sh -- Imagens de Radar do IPMET e SIMPEPAR
 
-HELP="ipmet.sh -- Puxar Imagens de Radar
-O script puxa a última imagem de radar do IPMET e a abre com $IMGVIEWER.
-Alternativamente, pode-se puxar imagens repetidamente com a opção -l,
-tempo entre conexões $SLEEP.
+	ipmet.sh [-ls] [-L TEMPO] 
+	
+	O script puxa a última imagem de radar do IPMET ou SIMEPAR e a
+	abre com $IMGVIEWER . Por padrão, acessa o radar do IPMET.
 
-opção: -h  exibir esta página de ajuda.
-opção: -l  puxar imagens a cada $SLEEP.
-cache: $TEMPD"
+	Pode-se puxar imagens repetidamente com a opção -l e setar o
+	tempo entre reconexões com opção -L TEMPO, em que TEMPO é um
+	argumento entendido por \`sleep'.
+
+	Diretório de cache: $TEMPD .
+
+
+	Opções
+	-h 	Exibir esta página de ajuda.
+	-l 	Puxar imagens repetidamente a cada $SLEEP .
+	-L TEMPO
+		Mesmo que -l e configura tempo entre reconexões.
+	-ss 	A última imagem do SIMEPAR ou as oito últimas."
+
+
+#imagem de radar simepar
+#http://www.simepar.br/prognozweb/simepar/radar_msc
+simeparf()
+{
+	local name time ret baseurl referer
+	baseurl=https://lb01.simepar.br/riak/pgw-radar
+	referer=Referer:http://www.simepar.br/
+	name="product${1:-1}.jpeg"
+	
+	printf -v time '%(%Y_%m_%d_%H:%M)T' -1 || time=$(date -Iseconds)
+	TEMPFILE="${TEMPD%/}/simepar_${time}${2}.jpg"
+
+	if ((OPTS>1))
+	then 	OPTS=1
+		for prev in 8 7 6 5 4 3 2
+		do 	simeparf $prev _$prev  ;((ret+=$?)) ;sleep 0.4
+		done
+	fi
+	
+	curl -L --compressed --header "$referer" "$baseurl/$name" -o "$TEMPFILE" ;((ret+=$?))
+
+	echo "$TEMPFILE"
+	return $ret
+}
 
 #imagem de radar ipmet
 #https://www.ipmetradar.com.br/2imagemRadar.php
 ipmetf()
 {
-	local data name info time ret
+	local data name info time ret baseurl referer
+	baseurl=https://www.ipmetradar.com.br/ipmet_html/radar
+	referer=Referer:https://www.ipmetradar.com.br/2imagemRadar.php
 
-	[[ -d "$TEMPD" ]] || mkdir -pv "$TEMPD" || exit
-
-	data=$( curl -L --compressed "$BASEURL/2carga_img.php" )
+	data=$( curl -L --compressed "$baseurl/2carga_img.php" )
 	name=$( sed -nE 's/.*(nova.jpg\?[0-9]+).*/\1/p' <<<"$data" )
 	info=$( sed -nE 's/.*(Imagem Composta dos Radares.*)<.*/\1/p' <<<"$data" )
 	time=$( grep -Eo '[0-9]+/[0-9]+/[0-9: ]+$' <<<"$info" )
 	TEMPFILE="${TEMPD%/}/ipmet_${time//[^a-zA-Z0-9:]/_}.jpg"
 
-	#if file does not exist already
-	#download new image to file
 	if [[ ! -s "$TEMPFILE" ]]
-	then 	curl -L --compressed --header "$REFERER" "$BASEURL/$name" -o "$TEMPFILE" ;ret=$?
+	then 	curl -L --compressed --header "$referer" "$baseurl/$name" -o "$TEMPFILE" ;((ret+=$?))
 	fi
 
-	echo -e "$info\n$TEMPFILE"
-	return ${ret:-0}
+	echo "$info"$'\n'"$TEMPFILE"
+	return $ret
 }
 
 #trap function
@@ -61,17 +97,21 @@ trapf()
 	exit
 }
 
-#opções
-while getopts hl c
-do  case $c in
-        h) echo "$HELP" ;exit ;;
-        l) OPTLOOP=1 ;;
-        \?) exit 1 ;;
-    esac
-done
-shift $((OPTIND -1))
-unset c
 
+#opções
+while getopts hlst: c
+do  case $c in
+        h) 	echo "$HELP" ;exit ;;
+        l) 	OPTLOOP=1 ;;
+	s) 	((++OPTS)) ;;
+	t) 	OPTLOOP=1 SLEEP="$OPTARG" SLEEP_SIM="$OPTARG" ;;
+        \?) 	exit 1 ;;
+    esac
+done ;unset c
+shift $((OPTIND -1))
+
+
+[[ -d "$TEMPD" ]] || mkdir -pv "$TEMPD" || exit
 
 #are we calling from the ``ipmetloop'' function?
 #record pid, else open image with feh
@@ -80,9 +120,9 @@ then
 	trap trapf INT TERM
 	tee "$PIDFILE" <<<$$ 
 	while true
-	do 	ipmetf || sleep $SLEEPERR ;sleep $SLEEP
+	do 	if ((OPTS)) ;then simeparf ;else ipmetf ;fi || sleep $SLEEPERR ;sleep $SLEEP
 	done
 else
-	ipmetf && ( "${IMGVIEWER[@]}" "$TEMPFILE" & )
+	if ((OPTS)) ;then simeparf ;else ipmetf ;fi && ( "${IMGVIEWER[@]}" "$TEMPFILE" & )
 fi
 

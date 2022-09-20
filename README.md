@@ -15,7 +15,7 @@ NAME | DESCRIPTION
 [faster_sh.txt](faster_sh.txt) | Tips for improving script performances, specific for some use cases, text document
 [grep.sh](grep.sh) |  Grep files with shell built-ins
 [inmet.sh](inmet.sh) | Download satellite images from Brazilian Instituto Nacional de Meteorologia
-[ipmet.sh](ipmet.sh) | Download radar images from Brazilian Instituto de Pesquisas Meteorológicas (UNESP)
+[ipmet.sh](ipmet.sh) | Download radar images from Brazilian IPMET/SIMEPAR.
 [ul.sh](ul.sh) |  Generate html lists from URLs
 [urlgrep.sh](urlgrep.sh) | Grep full-text content from URL list
 [wc.sh](wc.sh) |  Print line, word and character count for files with shell built-ins
