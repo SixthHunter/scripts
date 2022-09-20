@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v0.4  by mountaineerbr  GPLv3+
+# v0.4.1  by mountaineerbr  GPLv3+
 # imagens de radar do ipmet e simepar
 # Instituto de Pesquisas Meteorológicas (UNESP)
 # Sistema de Tecnologia e Monitoramento Ambiental do Paraná
@@ -99,12 +99,12 @@ trapf()
 
 
 #opções
-while getopts hlst: c
+while getopts hlL:s c
 do  case $c in
         h) 	echo "$HELP" ;exit ;;
         l) 	OPTLOOP=1 ;;
+	L) 	OPTLOOP=1 SLEEP="$OPTARG" SLEEP_SIM="$OPTARG" ;;
 	s) 	((++OPTS)) ;;
-	t) 	OPTLOOP=1 SLEEP="$OPTARG" SLEEP_SIM="$OPTARG" ;;
         \?) 	exit 1 ;;
     esac
 done ;unset c
