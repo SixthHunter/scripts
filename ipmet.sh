@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# v0.4.1  by mountaineerbr  GPLv3+
+# v0.4.2  by mountaineerbr  GPLv3+
 # imagens de radar do ipmet e simepar
 # Instituto de Pesquisas Meteorológicas (UNESP)
 # Sistema de Tecnologia e Monitoramento Ambiental do Paraná
 
 #image viewer
-IMGVIEWER=( feh )
+IMGVIEWER="${IMGVIEWER:-feh}"
 
 #tempo entre conexões
 #ipmet
@@ -52,7 +52,7 @@ simeparf()
 	referer=Referer:http://www.simepar.br/
 	name="product${1:-1}.jpeg"
 	
-	printf -v time '%(%Y_%m_%d_%H:%M)T' -1 || time=$(date -Iseconds)
+	printf -v time '%(%Y_%m_%d_%H_%M)T' -1 || time=$(date -Iseconds)
 	TEMPFILE="${TEMPD%/}/simepar_${time}${2}.jpg"
 
 	if ((OPTS>1))
@@ -80,7 +80,7 @@ ipmetf()
 	name=$( sed -nE 's/.*(nova.jpg\?[0-9]+).*/\1/p' <<<"$data" )
 	info=$( sed -nE 's/.*(Imagem Composta dos Radares.*)<.*/\1/p' <<<"$data" )
 	time=$( grep -Eo '[0-9]+/[0-9]+/[0-9: ]+$' <<<"$info" )
-	TEMPFILE="${TEMPD%/}/ipmet_${time//[^a-zA-Z0-9:]/_}.jpg"
+	TEMPFILE="${TEMPD%/}/ipmet_${time//[^a-zA-Z0-9]/_}.jpg"
 
 	if [[ ! -s "$TEMPFILE" ]]
 	then 	curl -L --compressed --header "$referer" "$baseurl/$name" -o "$TEMPFILE" ;((ret+=$?))
@@ -123,6 +123,6 @@ then
 	do 	if ((OPTS)) ;then simeparf ;else ipmetf ;fi || sleep $SLEEPERR ;sleep $SLEEP
 	done
 else
-	if ((OPTS)) ;then simeparf ;else ipmetf ;fi && ( "${IMGVIEWER[@]}" "$TEMPFILE" & )
+	if ((OPTS)) ;then simeparf ;else ipmetf ;fi && ( "$IMGVIEWER" "$TEMPFILE" & )
 fi
 
