@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v0.4.2  by mountaineerbr  GPLv3+
+# v0.4.3  by mountaineerbr  GPLv3+
 # imagens de radar do ipmet e simepar
 # Instituto de Pesquisas Meteorológicas (UNESP)
 # Sistema de Tecnologia e Monitoramento Ambiental do Paraná
@@ -47,7 +47,7 @@ HELP=" 	ipmet.sh -- Imagens de Radar do IPMET e SIMPEPAR
 #http://www.simepar.br/prognozweb/simepar/radar_msc
 simeparf()
 {
-	local name time ret baseurl referer
+	local name time ret baseurl referer prev
 	baseurl=https://lb01.simepar.br/riak/pgw-radar
 	referer=Referer:http://www.simepar.br/
 	name="product${1:-1}.jpeg"
