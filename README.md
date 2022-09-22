@@ -8,7 +8,7 @@ NAME | DESCRIPTION
 [anta.sh](anta.sh) | Explorador do sítio (website spider) &lt;oantagonista.com&gt;
 [aur.sh](aur.sh) | List packages from AUR
 [bcalc.sh](bcalc.sh) | Simple wrapper for Bash Bc and Zsh maths that keeps a record of results
-[bcalc_ext.bc](bcalc_ext.bc) | *bcalc.sh* extensions for bash bc
+_bcalc_ext.bc_ | *bcalc.sh* extensions for bash bc
 [cep.sh](cep.sh) | CEP por nome de rua e vice-versa via api dos Correios brasileiros
 [ctemp.sh](ctemp.sh) | Convert amongst temperature units (Celsius, Fahrenheit and Kelvin)
 [datediff.sh](datediff.sh) | Calculate time ranges in different units (was `ddate.sh` )
